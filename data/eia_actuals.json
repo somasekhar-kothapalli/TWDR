@@ -1,0 +1,14 @@
+{
+  "release_date": "30-09-2026",
+  "released_at": "30-09-2026 23:30",
+  "crude_change_mb": 0.922,
+  "cushing_change_mb": 0.553,
+  "cushing_level_mb": 24.301,
+  "gasoline_change_mb": -1.684,
+  "distillate_change_mb": -2.251,
+  "net_imports_change_mb": -0.468,
+  "refinery_util_change_pct": -1.5,
+  "source": "tradingeconomics",
+  "won_race": true,
+  "fetched_at": "30-09-2026 23:30"
+}

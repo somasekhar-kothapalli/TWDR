@@ -1,0 +1,12 @@
+{
+  "release_date": "30-09-2026",
+  "release_ist": "20:00",
+  "price_before_release": 91.41,
+  "release_candle": {
+    "high": 91.74,
+    "low": 91.16,
+    "open": 91.35,
+    "close": 91.28
+  },
+  "unit": "USD/bbl, NYMEX WTI. Not MCX rupee levels."
+}
