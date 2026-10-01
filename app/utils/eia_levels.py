@@ -11,7 +11,7 @@ import time
 
 import httpx
 
-logger = logging.getLogger("twpr.eia_levels")
+logger = logging.getLogger("twdr.eia_levels")
 
 CUSHING_URL = "https://www.eia.gov/dnav/pet/pet_stoc_wstk_dcu_YCUOK_w.htm"
 ROW_LABEL = "Commercial Crude Oil (Excl. Lease Stock)"

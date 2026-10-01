@@ -1,4 +1,4 @@
-# TWPR Lite: crude-first framework, no TLS or Z-score
+# TWDR Lite: crude-first framework, no TLS or Z-score
 
 **The idea:** one trigger number (the crude surprise), three vetoes, one price confirmation, then fixed option and risk rules. The whole calculation takes about 2 minutes with a calculator.
 

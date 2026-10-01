@@ -26,7 +26,7 @@ from app.utils.telegram import send_exception
 from app.scraper.sources import SOURCE_NAMES, scraper_for, slug_for
 from app.scraper.utils.calendar import pending_row, row_for_release
 
-logger = logging.getLogger("twpr.consensus_fetcher")
+logger = logging.getLogger("twdr.consensus_fetcher")
 
 SITES = ("tradingeconomics", "investing")
 INDICATORS = ("crude", "gasoline", "distillate")  # crude first: it carries crude_previous_mb

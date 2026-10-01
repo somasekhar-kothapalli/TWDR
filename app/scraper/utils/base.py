@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from ..browser import PlaywrightTimeoutError, browser_session, goto, render_html
 from .calendar import row_for_release
 
-log = logging.getLogger("twpr.scraper")
+log = logging.getLogger("twdr.scraper")
 
 STAT_KEYS = ("actual_mb", "consensus_mb", "previous_mb")
 

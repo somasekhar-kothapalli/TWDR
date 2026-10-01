@@ -5,7 +5,7 @@ import httpx
 
 from app.utils.common import env
 
-logger = logging.getLogger("twpr.telegram")
+logger = logging.getLogger("twdr.telegram")
 
 TIMEOUT_S = 10.0
 MAX_ALERT_CHARS = 1500
@@ -31,7 +31,7 @@ def send_message(text):
 
 
 def send_error(script, message):
-    return send_message(f"\u26a0\ufe0f TWPR ERROR\n{script}\n{message}")
+    return send_message(f"\u26a0\ufe0f TWDR ERROR\n{script}\n{message}")
 
 
 def send_exception(script, exc):

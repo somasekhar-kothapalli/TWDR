@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-TWDR: data pipeline for the "TWPR Lite" MCX crude-oil options framework described in `README.md` (the trading runbook: trigger = EIA crude surprise vs expected `E_c = (consensus + API)/2`, three vetoes, candle-break confirmation, fixed risk rules). `README.md` is strategy, not dev docs. `docs/twdr_learning_resources.md` is a reading list. Times are IST; EIA releases Wed 20:00 IST (21:00 after US winter-time switch).
+TWDR: data pipeline for the "TWDR Lite" MCX crude-oil options framework described in `README.md` (the trading runbook: trigger = EIA crude surprise vs expected `E_c = (consensus + API)/2`, three vetoes, candle-break confirmation, fixed risk rules). `README.md` is strategy, not dev docs. `docs/twdr_learning_resources.md` is a reading list. Times are IST; EIA releases Wed 20:00 IST (21:00 after US winter-time switch).
 
 ## Commands
 

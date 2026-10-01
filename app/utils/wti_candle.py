@@ -12,7 +12,7 @@ import httpx
 
 from app.utils.common import WTI_CANDLE_FILE, write_json
 
-logger = logging.getLogger("twpr.eia_levels")
+logger = logging.getLogger("twdr.eia_levels")
 
 NY, IST = ZoneInfo("America/New_York"), ZoneInfo("Asia/Kolkata")
 TICKER, RELEASE_ET = "CL=F", (10, 30)

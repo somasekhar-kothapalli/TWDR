@@ -30,7 +30,7 @@ from app.utils.telegram import send_exception
 from app.scraper.sources import SOURCE_NAMES, scraper_for, slug_for
 from app.scraper.utils.calendar import current_release, row_for_release
 
-logger = logging.getLogger("twpr.api_monitor")
+logger = logging.getLogger("twdr.api_monitor")
 
 SITES = ("tradingeconomics", "investing")
 FIELDS = ("crude",)

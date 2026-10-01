@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import logging
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-log = logging.getLogger("twpr.te_scraper")
+log = logging.getLogger("twdr.te_scraper")
 
 RELOAD_RETRIES = 2
 

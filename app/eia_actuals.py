@@ -41,7 +41,7 @@ from app.scraper.sources import SOURCE_NAMES, scraper_for, slug_for
 from app.scraper.utils.calendar import current_release, row_for_release
 from app.utils.wti_candle import release_candle
 
-logger = logging.getLogger("twpr.eia_actuals")
+logger = logging.getLogger("twdr.eia_actuals")
 
 SITES = ("tradingeconomics", "investing")
 LEGS = ("crude", "cushing", "gasoline", "distillate", "net_imports")  # crude first: it anchors the release date

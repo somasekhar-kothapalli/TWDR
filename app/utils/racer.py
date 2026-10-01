@@ -16,7 +16,7 @@ import time
 
 from app.scraper.utils.calendar import format_date
 
-logger = logging.getLogger("twpr.racer")
+logger = logging.getLogger("twdr.racer")
 
 
 def decide(fields, candidates, release_date=None):
