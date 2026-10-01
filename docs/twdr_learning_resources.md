@@ -24,7 +24,6 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **MCX Crude Oil product page** (specs, product leaflets, options PDFs): https://www.mcxindia.com/products/energy/crude-oil
   - Lists options specs by contract start (e.g. "March 2026 Contract Onwards"). Read the one that matches your expiry.
 - **MCX option chain**: https://www.mcxindia.com/market-data/option-chain
-- **Older options spec (Jan 2020 onwards), for reference only**: https://www.mcxindia.com/docs/default-source/products/contract-specification/crude-oil-options/crude-oil-(100-barrels)-options-january-2020-onwards.pdf?sfvrsn=e237b090_0
 - **MCX Awareness Corner and Options Calculator**: linked from the MCX site menu under Options (exact URL not retrieved).
 
 ### Zerodha Varsity
@@ -35,9 +34,7 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 
 ### Broker and third-party guides (secondary)
 - Sahi, MCX crude guide (margins, lot sizes, risks): https://www.sahi.com/blogs/crude-oil-trading-mcx-guide
-- Sahi, MCX crude beginners' guide 2026: https://www.sahi.com/blogs/crude-oil-trading-on-mcx-beginners-guide-2026
-- Navia, MCX crude specs and WTI vs Brent: https://navia.co.in/blog/crude-oil-on-mcx-specs-insights-market-dynamics/
-- Stoxbox, MCX crude contract details, expiry logic: https://stoxbox.in/marketopedia/currency-commodities-trading/crude-oil-mcx/
+- Shai, MCX Natural Gas Guide: https://www.sahi.com/blogs/natural-gas-trading-on-mcx-how-it-works
 - NiftyTrader, live MCX crude option chain with OI and IV: https://www.niftytrader.in/commodities-option-chain-nse/crudeoil
 
 ---
@@ -46,6 +43,12 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 
 ### CME Group
 - **Introduction to Crude Oil (free course)**: https://www.cmegroup.com/education/courses/introduction-to-crude-oil
+- **Option Strategies**: https://www.cmegroup.com/education/courses/option-strategies
+- **Option Greeks**: https://www.cmegroup.com/education/courses/option-greeks
+- **Tools for Option Analysis**: https://www.cmegroup.com/education/courses/tools-for-option-analysis
+- **Introduction to CVOL**: https://www.cmegroup.com/education/courses/introduction-to-cvol
+- **Technical Analysis**: https://www.cmegroup.com/education/courses/technical-analysis
+- **Introduction to Natural Gas**: https://www.cmegroup.com/education/courses/introduction-to-natural-gas
 - **WTI weekly options** (designed partly for midweek releases like the EIA report): https://www.cmegroup.com/education/courses/introduction-to-crude-oil/product-overview/monday-and-wednesday-weekly-options-on-wti-crude-oil-futures.html
 - **WTI Crude Oil overview, including CVOL** (30-day implied volatility index for WTI): https://www.cmegroup.com/markets/energy/crude-oil/light-sweet-crude.html
 - **Crude Oil futures and options hub**: https://www.cmegroup.com/markets/energy/crude-oil.html
@@ -54,6 +57,7 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 
 ### Books (no links; from general knowledge)
 - *Oil 101*, Morgan Downey: how the physical market works, from well to refinery to pricing.
+- *Nat Gas 101*, Morgan Downey: how the physical market works, from well to refinery to pricing.
 
 ---
 

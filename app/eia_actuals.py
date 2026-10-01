@@ -5,8 +5,7 @@ the report lands. Five outputs: crude / Cushing / gasoline / distillate stock
 CHANGES in million barrels (negative = draw), plus the refinery utilisation change.
 
 Both sites are scraped at the same time and the WHOLE report comes from one of
-them: the first site to return a complete, consistent report wins (`source`,
-`won_race`). A site missing any of the four changes, or with them on different
+them: the first site to return a complete, consistent report wins (`source`). A site missing any of the four changes, or with them on different
 release dates, is not a candidate. Nothing is written unless all four are valid.
 
 There is no refinery utilisation LEVEL: it is a percentage (e.g. 93.5) that neither
@@ -133,7 +132,6 @@ def fetch_eia_actuals(release_date=None, sites=SITES, make_scraper=scraper_for,
         **candidate,
         "refinery_util_change_pct": refinery,
         "source": SOURCE_NAMES[site],
-        "won_race": len(sites) > 1,  # False when nobody else was racing (e.g. --sites one)
     }
 
 
@@ -149,7 +147,6 @@ def main(argv=None):
         result = poll(lambda: fetch_eia_actuals(args.date, tuple(args.sites)),
                       args.once, POLL_INTERVAL_S, POLL_TIMEOUT_S, logger)
         released_at = now_ist().strftime(TIME_FORMAT)  # when the numbers were first seen
-        release_candle(datetime.strptime(args.date, "%d-%m-%Y").date()) if args.date else None
 
         payload = {
             "release_date": result["release_date"],
@@ -162,10 +159,10 @@ def main(argv=None):
             "net_imports_change_mb": result["net_imports_change_mb"],
             "refinery_util_change_pct": result["refinery_util_change_pct"],
             "source": result["source"],
-            "won_race": result["won_race"],
             "fetched_at": now_ist().strftime(TIME_FORMAT),
         }
         write_json(EIA_ACTUALS_FILE, payload)
+        release_candle(datetime.strptime(args.date, "%d-%m-%Y").date()) if args.date else None
         refinery = payload["refinery_util_change_pct"]
         logger.info(
             "EIA %s (%s): crude %+.3f | cushing %+.3f (level %s) | gasoline %+.3f | distillate %+.3f | net imports %+.3f | refinery util change %s",
