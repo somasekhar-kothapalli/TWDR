@@ -2,7 +2,9 @@
 
 **Status.** Tier 1 (crude, gasoline, distillate) is built: `python -m app.signal_engine` produces the verdict
 below. Tiers 2 to 4 (Cushing, refinery runs, SPR, imports, product supplied) are designed but not built; they
-live in [docs/tiers_2_4.md](docs/tiers_2_4.md). The developer spec and decision log are in
+live in [docs/tiers_2_4.md](docs/tiers_2_4.md). Natural gas (TWDR-NG) records every weekly storage report and
+sends a briefing and a record to Telegram, but gives no automatic trade signal yet: see
+[docs/twdr_ng.md](docs/twdr_ng.md). The developer spec and decision log are in
 [docs/signal_engine.md](docs/signal_engine.md). Every number below marked *placeholder* is a starting value,
 not a backtested one.
 
@@ -14,6 +16,31 @@ reverses. The engine delivers the verdict before 20:05; you confirm on the 20:00
 
 **Sign convention.** A build is positive and a draw is negative, in millions of barrels (M bbl). A positive
 deviation is bearish (buy puts); a negative deviation is bullish (buy calls).
+
+**Position type.** A directional option buyer: you buy either a single Call (CE) or a single Put (PE), never both at once.
+No straddles or strangles, no writing options, no opposite-side hedge.
+
+---
+
+## Flowcharts
+
+**Crude oil: the Wednesday EIA report** (sections 1 to 8 below, step by step)
+
+![TWDR crude oil flowchart](docs/img/twdr_cl_flow.png)
+
+**Natural gas: the Thursday EIA storage report** (record and notify; the rules and the evidence are in
+[docs/twdr_ng.md](docs/twdr_ng.md))
+
+![TWDR-NG natural gas flowchart](docs/img/twdr_ng_flow.png)
+
+**Natural gas options: what delta and implied volatility do to a correct call** (deltas 0.4 to 0.9, calls and
+puts; sizing section of [docs/twdr_ng.md](docs/twdr_ng.md))
+
+![MCX natural gas option tables](docs/img/twdr_ng_iv_tables.png)
+
+Blue boxes are done by the code, orange ones are you at the chart or the terminal. The two flowcharts are drawn by
+`python docs/img/make_flowcharts.py` and the option tables by `python docs/img/make_iv_tables.py`; when a rule
+changes in this README or in `docs/twdr_ng.md`, change it in that script and rerun it.
 
 ---
 
@@ -37,7 +64,7 @@ change, API Cushing and SPR (recorded in `eia_actuals.json`, `api_products.json`
 |---|---|
 | Tue evening | Consensus fetched |
 | Wed 18:00 | `python -m app.api_products` collects API gasoline and distillate (retries every 5 min to 19:45) |
-| 19:45 | Pre-flight checks (section 7) |
+| 19:45 | Pre-flight checks (section 5) |
 | 19:55 | Start `python -m app.eia_actuals` |
 | 19:59 | Start `python -m app.signal_engine` (it waits for the EIA numbers) |
 | 20:00 | EIA release |
@@ -204,5 +231,6 @@ move $0.60 to $1.00.
 
 **Where things are.** [docs/signal_engine.md](docs/signal_engine.md) (spec, decisions, the `api_products.json`
 schema), [docs/tiers_2_4.md](docs/tiers_2_4.md) (Cushing, refinery, SPR, imports, product supplied, and the
-original Lite vetoes), [docs/twdr_learning_resources.md](docs/twdr_learning_resources.md) (reading list),
+original Lite vetoes), [docs/twdr_ng.md](docs/twdr_ng.md) (natural gas: inputs, rulings, tests on the recorded
+weeks), `docs/img/` (the two flowcharts and the script that draws them), [docs/twdr_learning_resources.md](docs/twdr_learning_resources.md) (reading list),
 `CLAUDE.md` (developer notes).

@@ -17,6 +17,8 @@ python -m app.api_monitor [--once] [--date DD-MM-YYYY]     # polls every 5 min u
 python -m app.eia_actuals [--once] [--date DD-MM-YYYY]     # polls every 15s up to 90 min
 python -m app.api_products [--once] [--force] [--allow-stale]   # API gasoline/distillate from ForexFactory, schedule Wed ~18:00 IST
 python -m app.signal_engine [--once] [--allow-stale]       # Tier 1 signal, start ~19:59 IST (no brackets when typing)
+python docs/img/make_iv_tables.py                          # redraw docs/img/twdr_ng_iv_tables.png (NG option delta/IV tables, computed from PARAMETERS in the script)
+python docs/img/make_flowcharts.py                         # redraw docs/img/twdr_cl_flow.png and twdr_ng_flow.png (used in README.md); edit the script when a rule changes
 python -m app.ng_recorder [pre|post|backfill] [--date DD-MM-YYYY]   # natural gas, record only -> data/ng_record.json: pre ~19:55 IST (consensus, USD/INR with age), post >=90 min after the release (EIA table, salt ratios, NG=F bars, entry-rule result), backfill = the reports Yahoo still has (~60 days); pre and post send a Telegram summary (record only, not a signal)
 python -m app.utils.wti_candle                              # see note below
 python -m app.scraper.sites.investing --slug <slug> [--date DD-MM-YYYY]   # debug one scraper (cli.py)
