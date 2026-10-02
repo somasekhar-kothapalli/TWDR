@@ -931,6 +931,52 @@ Variety seen: units `M`, `m`, `MM`, `Mln`, `million`, `K`, plain thousands with 
 6. If the post is missing or fails the crude check, is falling back to the consensus (with the warning and a
    Telegram alert) acceptable, or should the engine refuse to run without it?
 
+## Notes
+
+- **2026-10-02, price move size (natural gas):** prices can move **3 to 5 cents per MMBtu**. MMBtu is the
+  natural gas unit (NYMEX Henry Hub), so this belongs to the natural gas side (TWDR-NG, the weekly storage
+  report), not to the WTI crude bands above, which are in USD per barrel. The context (for example per
+  Bcf of storage surprise, or per report) was not given, so it is recorded as stated and is not used by the
+  engine.
+
+- **2026-10-02, outside view (AlgoKing free guides, marketing pages for a paid course; generic and unverified):**
+  `https://algoking.net/markets/usa/crude-oil-inventory-strategy` and
+  `https://algoking.net/markets/usa/natural-gas-storage-report`. Points that touch this spec:
+  - Agrees: the best crude trades are surprises of more than 2M bbl (our `min_net` 2.0); a significant surprise
+    moves WTI 30 to 100+ ticks, that is $0.30 to $1.00+ (our expected-move bands); API and EIA agree in
+    direction about 80% of the time (Input 8); the first minutes are chaotic and a later entry is safer.
+  - **Disagrees on mixed data:** crude is "most important", so bias toward crude's direction with less
+    follow-through, or skip. Our Setup C does the opposite (fade the crude, follow the products). Relevant to the
+    open question from the 30 Sep replay (crude +0.56 against gasoline -2.93, NO TRADE).
+  - Different entry: wait 10 to 15 minutes for the spike to settle, then trade the breakout of the post-data
+    range (ours: the 20:05 candle check).
+  - Not in our engine: season weighting (gasoline matters more in the summer driving season, distillate in the
+    heating season, Nov to Feb).
+  - In-line prints move only 10 to 20 ticks ($0.10 to $0.20), below the $0.30 floor of our smallest band.
+  - **Natural gas page:** an in-line print is "within 3 to 5 Bcf" (skip), a clear surprise is 5+ Bcf, NG can move
+    3 to 8%+ in minutes, and the report is Thursday 10:30 ET in Bcf. The "3 to 5" there is Bcf, not cents per
+    MMBtu: check whether the earlier note about 3 to 5 cents per MMBtu came from a different source.
+
+- **2026-10-02, natural gas pages (AlgoKing, for the future TWDR-NG; not used by the crude engine):**
+  `https://algoking.net/markets/usa/natural-gas-weather-play` and
+  `https://algoking.net/markets/usa/natural-gas-momentum-strategy`.
+  - Contract facts: NG is 10,000 MMBtu and one tick is $10, so a tick is 0.001 per MMBtu. **The earlier note
+    "3 to 5 cents per MMBtu" is therefore 30 to 50 ticks, $300 to $500 per full contract** (MNG, the micro, is
+    1,000 MMBtu at $1 per tick).
+  - NG often moves 3 to 5% a day and can gap 3 to 5% overnight; weather forecasts (6-10 and 8-14 day) are the
+    main driver and prices react to forecast CHANGES; storage against the 5-year average amplifies or dampens
+    the reaction; weather matters most in the withdrawal season (Nov to Mar).
+  - Storage-report routine (same pattern as our crude timing): do not hold into the report, wait until 10:45 ET,
+    enter the first pullback in the reaction direction, stop beyond the spike extreme, target 2 to 3 times the
+    spike range.
+
+- **2026-10-02, consensus sources disagree (found while scoping natural gas):** for the 30 Sep crude print
+  TradingEconomics shows consensus -0.3 and Investing.com -0.7 (actual +0.922). `consensus_fetcher` keeps whichever
+  site wins the race and the engine gives no warning about the other. The 30 Sep replay result (NO TRADE) holds
+  with either number (crude deviation +0.56 or +0.76, both under the 2.0 needed for Setup C). Possible later
+  change: record the other site's consensus and warn when the trigger would differ between them. Also: the old
+  README's "consensus -1.9" for 30 Sep matches the API's forecast in the ForexFactory post, not the EIA consensus.
+
 ---
 
 ## Decision log
@@ -958,6 +1004,10 @@ Variety seen: units `M`, `m`, `MM`, `Mln`, `million`, `K`, plain thousands with 
 | 2026-10-02 | Input 12 approved and built (`app/api_products.py`): scheduled Wednesday ~18:00 IST, retries every 5 min to ~19:45. Differences from the proposal: no DOM fallback (JSON only), a partial post is written when the other leg never appears, a complete file is not re-fetched without --force. Verified live on the 22 Sep post (gasoline -2.16, distillate -2.164, Cushing +2.082). |
 | 2026-10-02 | Tiers 2 to 4 material moved to `docs/tiers_2_4.md` (Inputs 2, 9, 10 and the Cushing parts of Input 8 are now stubs or pointers); `README.md` rewritten as the Tier 1 runbook. Flow test on the 30 Sep release: NO TRADE (crude +0.56 against gasoline -2.93: crude too small for Setup C); the reason text was misleading and was fixed. |
 | 2026-10-02 | `thresholds.json` pruned to the Tier 1 keys: removed `trigger_mb`, `veto_flow_ratio`, `veto_cushing_mb`, `veto_gas_ratio`, `entry_by_min`, `roll_within_days`, `max_spread_pct`, `min_delta`, `max_itm_strikes`, `strike_step`, `tp_points`, `sl_points`, `risk_pct`, `max_lots`, `lot_barrels` (the points-based sizing numbers are gone; the README percentage rules are the only sizing rules). peewee and groq kept in requirements.txt by decision. |
+| 2026-10-02 | Note added: natural gas prices can move 3 to 5 cents per MMBtu (see Notes). Not used by the crude engine. |
+| 2026-10-02 | Two AlgoKing strategy pages added to the learning resources and summarised in Notes (agree on the 2M surprise and the move size; disagree on mixed data). |
+| 2026-10-02 | Two more AlgoKing pages (natural gas weather play and momentum) added to the learning resources and noted: tick size gives 3 to 5 cents per MMBtu = 30 to 50 ticks = $300 to $500 per NG contract. |
+| 2026-10-02 | TWDR-NG scoping started in `docs/twdr_ng.md`. TWDR-CL needs no change to run; optional later items: product-led case, source-disagreement warning, season weighting. |
 
 ## Inputs still to come
 

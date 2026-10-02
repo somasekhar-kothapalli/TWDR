@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-TWDR: data pipeline plus Tier 1 signal engine for an EIA-inventory-surprise strategy on MCX crude options. `README.md` is the Tier 1 trading runbook (strategy, not dev docs): per-stock deviations of crude, gasoline and distillate against API-adjusted baselines, the setup order, the 20:05 candle check, option/risk/exit rules. Tiers 2 to 4 (Cushing, refinery, SPR, imports, product supplied) are design notes only, in `docs/tiers_2_4.md`. `docs/signal_engine.md` is the developer spec and decision log; `docs/twdr_learning_resources.md` is a reading list. Times are IST; EIA releases Wed 20:00 IST (21:00 after US winter-time switch).
+TWDR: data pipeline plus Tier 1 signal engine for an EIA-inventory-surprise strategy on MCX crude options. `README.md` is the Tier 1 trading runbook (strategy, not dev docs): per-stock deviations of crude, gasoline and distillate against API-adjusted baselines, the setup order, the 20:05 candle check, option/risk/exit rules. Tiers 2 to 4 (Cushing, refinery, SPR, imports, product supplied) are design notes only, in `docs/tiers_2_4.md`. `docs/signal_engine.md` is the developer spec and decision log; `docs/twdr_ng.md` is the natural gas (TWDR-NG) scoping doc, nothing built; `docs/twdr_learning_resources.md` is a reading list. Times are IST; EIA releases Wed 20:00 IST (21:00 after US winter-time switch).
 
 ## Commands
 
@@ -17,11 +17,12 @@ python -m app.api_monitor [--once] [--date DD-MM-YYYY]     # polls every 5 min u
 python -m app.eia_actuals [--once] [--date DD-MM-YYYY]     # polls every 15s up to 90 min
 python -m app.api_products [--once] [--force] [--allow-stale]   # API gasoline/distillate from ForexFactory, schedule Wed ~18:00 IST
 python -m app.signal_engine [--once] [--allow-stale]       # Tier 1 signal, start ~19:59 IST (no brackets when typing)
+python -m app.ng_recorder [pre|post|backfill] [--date DD-MM-YYYY]   # natural gas, record only -> data/ng_record.json: pre ~19:55 IST (consensus, USD/INR with age), post >=90 min after the release (EIA table, salt ratios, NG=F bars, entry-rule result), backfill = the reports Yahoo still has (~60 days); pre and post send a Telegram summary (record only, not a signal)
 python -m app.utils.wti_candle                              # see note below
 python -m app.scraper.sites.investing --slug <slug> [--date DD-MM-YYYY]   # debug one scraper (cli.py)
 ```
 
-Tests (no pytest installed; each file also runs as a module, fake scrapers, no network): `python -m tests.test_signal_engine`, `python -m tests.test_eia_actuals`, `python -m tests.test_api_products`. `sources.py` mentions `tests/test_sources.py`, which is absent. No linter config.
+Tests (no pytest installed; each file also runs as a module, fake scrapers, no network): `python -m tests.test_signal_engine`, `python -m tests.test_eia_actuals`, `python -m tests.test_api_products`, `python -m tests.test_ng_recorder`, `python -m tests.test_currency`. `sources.py` mentions `tests/test_sources.py`, which is absent. No linter config.
 
 ## Architecture
 
@@ -39,6 +40,8 @@ Race pattern (`utils/racer.py`): every fetcher runs both sites concurrently in t
 Gotchas:
 - Sign convention: build positive, draw negative, in million barrels.
 - API Cushing/gasoline/distillate are deliberately NOT in `sources.py` (paywalled, stale/dead on tradingeconomics/investing.com). Don't re-add them there. API gasoline/distillate (plus Cushing and SPR when posted) come from a separate stage, `app/api_products.py`, which reads the X post that ForexFactory lists on its API bulletin event (`curl_cffi` browser impersonation; the repo's Playwright is blocked by Cloudflare there). It picks the post by timestamp window and by matching `api_report.json` crude, never by the page's date label, and never overwrites a `"source": "manual"` file.
+- `app/utils/currency.py` (adapted from the earlier pipeline) gives the rupee as CONTEXT only (5-session USD/INR trend vs the trade direction); it never feeds a decision. The NG recorder uses it.
+- `xlrd` is in `requirements.txt` only to read EIA's old-format `.xls` history files (`ir.eia.gov/ngs/ngshistory.xls`, `ngsstats.xls`) for the natural gas (TWDR-NG) work; see `docs/twdr_ng.md`.
 - `write_json` is atomic (temp file + replace, retried on Windows PermissionError) because the signal engine polls `eia_actuals.json` while it is written.
 - `eia_levels.cushing_level` scrapes EIA's public table and cross-checks level delta against the change to reject stale pages.
 - `wti_candle.py` has a `fetch`/`release_candle` but no CLI; it raises RuntimeError on missing data (`eia_actuals` logs that as a warning, the candle is record-only). Yahoo keeps ~60 days of 5m data.

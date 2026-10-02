@@ -26,6 +26,17 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **MCX option chain**: https://www.mcxindia.com/market-data/option-chain
 - **MCX Awareness Corner and Options Calculator**: linked from the MCX site menu under Options (exact URL not retrieved).
 
+### MCX education and certification
+Self-study courses, each ending in an online, AI-proctored multiple-choice exam. Only the overview pages were read, not the material. None of them gives a trading edge; the options and quant ones are the closest to our work.
+- **MCCP, MCX Certified Commodity Professional**: https://www.mcxindia.com/education-training/training/mccp
+  - Market structure, regulation, hedging, clearing, settlement and delivery, taxation and accounting, plus a chapter each on technical analysis and options. 50 questions, 90 minutes, pass 50%, half-mark negative marking, Rs 2,950 including taxes, valid 5 years. A sample test is on the page.
+- **MCIP, MCX Certified Index Professional**: https://www.mcxindia.com/education-training/training/mcip
+  - MCX's iCOMDEX index futures (BULLDEX, METLDEX, ENRGDEX). Rs 2,950, valid 5 years. Not relevant to single-contract trading.
+- **MCOP, MCX Certified Options Professional**: https://www.mcxindia.com/education-training/training/mcop
+  - Options on futures: terminology, pricing models, Greeks, payoffs, margining, settlement, devolvement, strategies. 50 questions, 120 minutes, pass 50%, no negative marking, Rs 2,950, valid 5 years. The most relevant of the three to the crude options plan.
+- **MCX e-learning courses (authored by QuantInsti)**: https://www.mcxindia.com/education-training/training/e-learning-courses
+  - Statistical Arbitrage, Getting Started with Algorithmic Trading (about 2 hours: strategy types, back-testing, platform requirements), Python for Commodity Trading (back-testing, slippage and transaction costs), Quantitative Trading Strategies and Models, two machine-learning courses (regression, classification), and a 6-course bundle. Fees are not shown on the page. Back-testing, slippage and costs are the relevant parts; machine learning is not: a weekly event strategy has only about 52 events a year, far too few to fit a model.
+
 ### Zerodha Varsity
 - **Commodities, Currency and Government Securities module** (chapters 10-12 are the crude oil series): https://zerodha.com/varsity/module/commodities-currency-government-securities/
 - **Crude Oil Part 3: the crude oil contract** (lot sizes, expiry logic, margins, arbitrage): https://zerodha.com/varsity/chapter/crude-oil-part-3-the-crude-oil-contract/
@@ -36,6 +47,25 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - Sahi, MCX crude guide (margins, lot sizes, risks): https://www.sahi.com/blogs/crude-oil-trading-mcx-guide
 - Shai, MCX Natural Gas Guide: https://www.sahi.com/blogs/natural-gas-trading-on-mcx-how-it-works
 - NiftyTrader, live MCX crude option chain with OI and IV: https://www.niftytrader.in/commodities-option-chain-nse/crudeoil
+
+### MCX natural gas and its link to Henry Hub (secondary; for TWDR-NG)
+- **MCX Natural Gas and the U.S. Henry Hub link**, Ventura: https://www.venturasecurities.com/blog/mcx-natural-gas-and-the-u-s-henry-hub-natural-gas-link/
+  - The pricing chain Henry Hub (USD) -> USD/INR -> MCX (rupees); at expiry MCX settles on the NYMEX front-month settlement at the RBI reference rate. Its example numbers imply USD/INR of about 94 to 95 (the page's date is not stated).
+- **Natural gas futures**, Shriram Finance: https://www.shriramfinance.in/investments/natural-gas-futures
+- **Why natural gas prices are rising in 2026**, Mastertrust: https://mastertrust.co.in/blog/why-natural-gas-prices-are-rising-in-2026-and-what-it-means-for-mcx-traders
+  - Contract sizes (1,250 MMBtu and a 250 MMBtu mini), USD/INR as a second driver, margin rising with volatility.
+- **MCX natural gas surges 17.66% tracking US gas** (cold-weather episode), Investing.com: https://in.investing.com/news/commodities-news/mcx-natural-gas-surges-1766-tracking-us-gas-amid-colder-weather-and-arctic-blast-4593396
+  - A worked example of MCX following a large NYMEX move (about +17% against +16%).
+- **Natural Gas**, Zerodha Varsity chapter: https://zerodha.com/varsity/chapter/natural-gas/
+  - An older chapter: contract mechanics (expiry on the 25th of the delivery month), margin example (about 15% overnight, 7% intraday at that time), NYMEX overlay.
+- **Natural gas futures**, Upstox: https://upstox.com/learning-center/commodity/natural-gas-futures/article-1868/
+  - Lot 1,250 MMBtu (mini 250), tick Rs 0.10, so Rs 125 per lot per tick; cash-settled.
+- **MCX trading hours revised from 9 March 2026**, ICICI Direct: https://www.icicidirect.com/ilearn/commodity/articles/mcx-revision-in-trading-hours-from-march-09-2026
+  - The evening close moves from 23:55 to 23:30 during US daylight saving time (second Sunday of March to first Sunday of November), then reverts to 23:55. Matches the schedule the engine uses for the crude hard exit.
+- **Know your commodity before you trade: Natural Gas**, ICICI Direct (MCX contracts and risks): https://www.icicidirect.com/ilearn/commodity/articles/know-your-commodity-before-you-trade-natural-gas
+- **How to Trade Natural Gas**, Switch Markets (a CFD broker's guide; carries its risk warnings and sales language): https://www.switchmarkets.com/learn/natural-gas-trading
+- **Introduction to Natural Gas**, CME Group course (also listed in section 3): https://www.cmegroup.com/education/courses/introduction-to-natural-gas
+- All six are broker or educational pages, not exchange documents: check the contract specification on mcxindia.com.
 
 ---
 
@@ -70,6 +100,7 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **"EIA now using near-real-time export data"** (why exports distort both stocks and implied demand): https://www.eia.gov/todayinenergy/detail.php?id=27752
 - **Petroleum Supply Monthly explanatory notes** (for reconciling weekly vs monthly data): https://www.eia.gov/petroleum/supply/monthly/pdf/psmnotes.pdf
 - **Short-Term Energy Outlook** (monthly; next release Oct 6, 2026): https://www.eia.gov/outlooks/steo/report/petro_prod.php
+- **Short-Term Energy Outlook, main page** (all tables and figures; the September 2026 edition forecasts natural gas storage of 3,969 Bcf on 31 Oct 2026, 5% above the 5-year average; next release 6 Oct 2026): https://www.eia.gov/outlooks/steo/
 - **This Week in Petroleum**: EIA's Wednesday written commentary on the report (link not retrieved; find it under the WPSR page).
 
 ### Natural gas storage (for TWDR-NG)
@@ -77,6 +108,12 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **Weekly Natural Gas Storage Report** (Thursday, 10:30 ET): https://ir.eia.gov/ngs/ngs.html
 - **EIA natural gas storage overview**: https://www.eia.gov/naturalgas/storage/
 - **Sampling variability in the storage estimates**: https://www.eia.gov/todayinenergy/detail.php?id=29712
+- **Natural Gas Storage Report strategy (United States)**, AlgoKing free guide: https://algoking.net/markets/usa/natural-gas-storage-report
+  - Surprise-versus-expected framing, wait until 10:45 ET, skip in-line prints (within 3 to 5 Bcf), momentum above 5 Bcf, fade a small surprise with an oversized spike, storage versus the 5-year average as context. A marketing page for a paid course: generic, unverified claims.
+- **Natural Gas Weather Play strategy (United States)**, AlgoKing free guide: https://algoking.net/markets/usa/natural-gas-weather-play
+  - Weather as the main NG driver: trade forecast CHANGES (6-10 and 8-14 day outlooks, model runs 00Z/06Z/12Z/18Z, Euro versus GFS), storage versus the 5-year average as amplifier or damper, withdrawal versus injection season, holds of 5 to 15 days. Free forecast sources named (NOAA CPC). A marketing page for a paid course: generic, unverified claims.
+- **Natural Gas Momentum Strategy (United States)**, AlgoKing free guide: https://algoking.net/markets/usa/natural-gas-momentum-strategy
+  - Contract sizes (NG 10,000 MMBtu at $10 per tick, MNG 1,000 MMBtu), RSI/MACD/ADX momentum rules, risk limits, and a storage-report routine: do not hold into the report, wait for 10:45 ET, enter the first pullback in the reaction direction, stop beyond the spike extreme, target 2 to 3 times the spike range. A marketing page for a paid course: generic, unverified claims.
 
 ---
 
@@ -102,6 +139,8 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
   - **Oil Prices Jump On Surprise Crude Inventory Draw** (per its description: prices rose on a Wednesday-morning EIA surprise crude draw alongside a steep drop in US crude production): https://oilprice.com/Energy/Crude-Oil/Oil-Prices-Jump-On-Surprise-Crude-Inventory-Draw.html
     - A worked example of a surprise-draw reaction, useful beside the Tier 1 setups in `docs/signal_engine.md`. Only the title and description were checked; not read in full.
 - **Rigzone weekly EIA summaries**: https://www.rigzone.com
+- **Crude Oil Inventory Strategy (United States)**, AlgoKing free guide: https://algoking.net/markets/usa/crude-oil-inventory-strategy
+  - An outside view of the same trade: surprises over 2M bbl, 30 to 100+ tick moves, mixed data usually muted (bias toward crude), the post-data trend entry 10 to 15 minutes later, seasonal weight on gasoline or distillate. A marketing page for a paid course: generic, unverified claims. Compared with our Tier 1 spec in `docs/signal_engine.md` Notes.
 - **Baker Hughes rig count** (Fridays): https://rigcount.bakerhughes.com (not retrieved in search)
 - **RBI USD/INR reference rate**: on rbi.org.in. MCX converts NYMEX WTI with the last RBI reference rate for final settlement.
 
@@ -177,6 +216,14 @@ These are indicator and price-action strategy videos from a broker channel (Dhan
 - Crude Oil Trading Strategy for Every Market Condition, 8 min (Sep 2026): https://www.youtube.com/watch?v=T8069pp8grc
 - Crude Mini Trading Using Options Chart, 11 min: https://www.youtube.com/watch?v=jf7K_ogAxaY
 - Crude Oil Intraday Trading Strategy, 11 min: https://www.youtube.com/watch?v=ZniDTRbVMsw
+
+### Broker-made MCX natural gas strategy videos (use with care)
+Same broker channel (Dhan) as the crude ones above: indicator and price-action strategies that promote the broker's products, not the inventory-surprise method. Titles checked via YouTube; durations are not retrieved and the videos have not been watched.
+- **Natural Gas Intraday Trading Strategy (High-Probability Setup)**, Commodities by Dhan: https://www.youtube.com/watch?v=79b1G54ChMs
+- **Natural Gas Trading Strategy Explained in 14 Mins**, Dhan: https://www.youtube.com/watch?v=742QhC4ghLg
+- **Advanced Natural Gas Trading Strategy**, Dhan: https://www.youtube.com/watch?v=wx-DyDEz2Xg
+- **Natural Gas Trading Strategy for Current Market Trend (expiry on 23 Sep)**, Dhan: https://www.youtube.com/watch?v=_GMFvxyVw9s
+  - Tied to a September expiry, so it is dated; useful at most for how a trader on this broker frames expiry week.
 
 ---
 
