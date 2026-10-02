@@ -122,7 +122,7 @@ Investing.com actual minus consensus, Bcf; a positive surprise is a bigger build
 
 ## Input 2: the natural gas analytical flow (checklist, thresholds, chart-based entry)
 
-The flow chart is saved as `docs/img/twdr_ng_flow.png`. Times are Eastern; the IST column is the US summer-time
+The flow chart is saved as `docs/img/twdr_ng_flow.png` (redrawn on 2026-10-02 with every later ruling, by `docs/img/make_flowcharts.py`; the first version only had this input). Times are Eastern; the IST column is the US summer-time
 clock (add one hour in winter). The release is 10:30 ET = 20:00 IST.
 
 ### Specified
@@ -938,6 +938,124 @@ stays your chart check against the box, using the bands and wick rules in the `p
 
 ---
 
+### Sizing and instrument: lot size, delta and IV (2026-10-02, illustration, not a ruling)
+
+**Position type.** the strategy is a directional option buyer who purchases either a single Call (CE) or a single Put (PE), but not both simultaneously. No straddles or strangles, no selling or writing options, no hedging with the opposite option. The loss is capped at the premium; spreads are a variant to be decided separately.
+
+**Lot arithmetic.** Futures are linear: 1 rupee per MMBtu = Rs 1,250 per lot (Rs 250 per mini lot), up or down. At 96.3 a
+cent is about Rs 0.96, so the standard band (2 to 4.5 cents) is about Rs 2,400-5,400 per lot (Rs 480-1,080 mini), the shock band
+(8 to 15 cents) about Rs 9,600-18,000, and a 3 to 10 cent box stop Rs 3,600-12,000 per lot. An option pays delta x points x 1,250
+(at the money about Rs 625 per point) and a bought option loses at most its premium.
+
+**Sizing rule (professional practice, to confirm).** Fix the rupee risk first (0.5 to 1% of capital), then lots = risk / (stop in
+points x 1,250); for a bought option, lots = risk / (premium x stop fraction x 1,250). Never widen the stop to fit a lot; if the
+answer is under 1 lot, use mini lots (4 minis = 1 lot) or skip. High momentum: 30-50% smaller; shock: trail, never fade.
+
+**IV after the release, 0.5 against 0.8 delta** (Black-76 estimate, not MCX quotes: futures Rs 300, 20 days, IV 70% to 60%):
+
+| | 0.5 delta (at the money) | 0.8 delta (in the money, strike about 265) |
+|---|---|---|
+| Premium | about Rs 17.8 (Rs 22.2k per lot; strike 304) | about Rs 41 (Rs 51k per lot) |
+| Delta P&L per Rs 1 | Rs 625 | Rs 1,000 |
+| Vega per IV point | about Rs 350 per lot | about Rs 246 per lot |
+| 10-point IV fall | -Rs 3,500 (14% of premium) | -Rs 2,460 (5% of premium) |
+| 5-point IV fall | -Rs 1,750 | -Rs 1,230 |
+
+A correct 3 cent call is about Rs 2.9 on futures. At 0.5 delta the gain (about Rs 1,850) is cancelled by a 5-point crush (+Rs 83)
+and turned into a loss by a 10-point one (-Rs 1,683). At 0.8 delta the gain (about Rs 2,900) survives (+Rs 686 after a 10-point
+crush, +Rs 1,769 after 5). Full tables for deltas 0.4 to 0.9, calls and puts, are in `docs/img/twdr_ng_iv_tables.png` (drawn by
+`python docs/img/make_iv_tables.py`; change its PARAMETERS and rerun). The cost: twice the capital and cash risk per lot, and in-the-money MCX strikes can be illiquid.
+IV is bid up before the report and falls at the release itself, not over the 30 minutes; a shock band can lift it instead.
+
+**Consequences.** Note the option's IV before 10:30 ET (not a code input; the recorder does not read it), buy in the money or use a
+debit spread when it is high, keep limit orders and a spread cap of about 5% of the premium, and compare with futures (no IV risk,
+no loss cap, margin). The 30-minute time-out suits options because theta barely moves in that window. Open: capital, risk
+percent, futures or options.
+
+---
+
+### Spec: the natural gas signal engine, `ng_signal` (draft, nothing coded, 2026-10-02)
+
+**Purpose.** On report day, deliver within seconds of the EIA print what the code can know without a price chart: the headline
+deviation, the size band, the direction, the contract, the expected move in cents and in rupees per lot, and the checklist for
+the first-candle entry. Same pattern as the crude engine (`app/signal_engine.py`): data only, verdict before 20:05 IST,
+Telegram summary, every failure loud. The chart steps stay yours.
+
+**What it does not do (v1).** It does not read prices (free Yahoo data is delayed, live latency unmeasured; the 10:35 ET first
+candle is judged on your chart), does not pick strikes or lots, does not apply the salt ratios (information only), and does not
+use weather, production, LNG feedgas or a whisper number. Options selection stays manual until capital, risk percent and the
+futures-or-options choice are given; v1 prints futures rupees per lot and the delta multiple (a 0.8-delta option earns about
+0.8 of it, before the spread).
+
+**Reuse, do not rewrite.** `app/ng_recorder.py` already has the release schedule with holiday exceptions (`release_at`), the
+contract roll (`contract_for`, `EXPIRIES`, `ROLL_DAYS`), the size bands (`size_band`, `BAND_NOTE`), the EIA CSV and table parsing
+(`parse_eia_csv`), the rate choice with its age warning (`choose_rate`, `currency_block`) and the Telegram helpers. `ng_signal`
+imports them; the entry-rule evaluation (`evaluate_rule`) stays in the recorder, where it judges the saved bars after the fact.
+
+**Inputs**
+
+| Input | Source | Missing or late |
+|---|---|---|
+| Release day and time | `release_at()` (Thursday 10:30 ET, holiday exceptions) | unknown date is an ERROR |
+| Consensus (Bcf) | the `pre` record in `data/ng_record.json`, else the Investing.com row, else `--consensus <Bcf>` typed by hand | none of the three: ERROR with a Telegram alert (a wrong baseline is worse than none) |
+| Actual net change (Bcf) | `ir.eia.gov/ngs/wngsr.csv`, polled until the report for this release appears; fallback the Investing.com actual | still absent after the wait: ERROR |
+| Contract of the day | `contract_for(release day)` | calendar exhausted: warn, say "add the next expiry" |
+| USD/INR | the reading in the `pre` record, else a fresh `choose_rate()` | older than 30 minutes or unknown: warn in the message, never skip |
+
+**Run.** `python -m app.ng_signal [--once] [--consensus <Bcf>] [--allow-stale]`, started about 19:59 IST on release day (after
+`ng_recorder pre` at 19:55). It polls the EIA file every 5 seconds up to 15 minutes, as the crude engine does. The report is
+recognised by its week-ending date (the Friday before the release); a file whose week is the old one is not the print. Stale
+data is refused unless `--allow-stale`.
+
+**Steps**
+1. Contract and release time, consensus, rate (as above).
+2. Wait for the actual. Record when it first appeared and from which source (`data_first_seen`, `data_source`), to measure the
+   EIA file's lead over the aggregators on 8 Oct.
+3. `deviation = actual - consensus`; `bias = BULLISH` when negative (smaller injection or bigger draw than expected), `BEARISH`
+   when positive, none at zero. Band from `size_band(abs(deviation))`.
+4. Status: noise and buffer A are **NO TRADE** (stand down); standard, high momentum and shock are **SIGNAL**; computed after the
+   deadline (20:05 IST, `deadline_min` 5 as for crude) is **LATE** (you decide); any failure is **ERROR**.
+5. Expected move from the band table (standard 2 to 4.5 cents, high momentum 5 to 7.5, shock 8 to 15 and more, no fixed
+   target), converted with the chosen rate: `cents x rate / 100 x 1,250` rupees per lot (about 1,200 per cent at 96.3).
+6. Write `data/ng_signal.json` and `data/ng_signals/<YYYY-MM-DD>.json`, then send the Telegram message.
+
+**Message (draft, SIGNAL).**
+
+```
+TWDR-NG 08-10-2026 SIGNAL: BULLISH, standard band (OCT)
+Actual 58 vs consensus 63 = -5 Bcf (EIA file, first seen 20:00:07)
+Expected move 2 to 4.5 cents = Rs 2,400-5,400 per lot (USD/INR 96.3, 4 min old)
+Check at 20:05 on the first 5-min candle: closes ABOVE your pre-report box
+  - against the headline (closes below) = skip, no fade
+  - a long opposing wick (bigger than the body, or over half the box) = wait for the 20:15 close
+  - still inside = wait for the 20:15 close; inside again = no trade
+Stop just beyond the opposite side of the box. Time-out 20:30 IST (11:00 ET).
+Options: a 0.8-delta option earns about 80% of the futures figure, before the spread.
+```
+
+NO TRADE states the band and "stand down"; high momentum adds "reduce size 30 to 50%, no market orders"; shock adds "trend-follow,
+trail stops, never fade, may run to 21:00-21:30 IST".
+
+**Output file (`data/ng_signal.json`).** `status`, `release_date`, `release_et`, `release_ist`, `contract`, `consensus_bcf`,
+`consensus_source`, `actual_bcf`, `data_source`, `data_first_seen`, `deviation_bcf`, `bias`, `band`, `expected_move_cents`
+(low, high), `expected_move_rupees_per_lot`, `usdinr` (value, source, age_min, warning), `checklist` (the lines above),
+`reasons`, `warnings`, `deadline_ist`, `generated_at`. The ERROR form carries the error text only.
+
+**Tests (no network, fake sources, `python -m tests.test_ng_signal`).** The deviation sign and the bias; every band edge
+(3, 3.5, 4, 10, 11, 12, 12.1, 13) to the right status; noise is NO TRADE; LATE after the deadline; consensus missing from all
+three sources is ERROR; the old week's file is not accepted as the print; the manual `--consensus` override; the holiday release
+time (Fri 13 Nov, Wed 25 Nov 12:00 ET); the rupee conversion; an ERROR run overwrites a stale `ng_signal.json`.
+
+**Build order.** (1) The 8 Oct live test of the recorder, to measure the EIA file latency, the real rate age and the real option
+spread at 10:35 ET. (2) `ng_signal` as above, then its tests. (3) Later, from the saved weeks: the rupee-per-band table for
+options, spread and break-even fields in the recorder, and the calibration of the bands.
+
+**Open before coding.** Capital and risk percent; futures or options for v1; the EIA CSV's update speed at 10:30 ET (unmeasured);
+the entry rule has fired once in 9 weeks, so every threshold is a placeholder until the recorder has more weeks; consensus is
+still not posted for 8 Oct (check Wednesday evening).
+
+---
+
 ## 2. What already exists in the repo (checked 2026-10-02)
 
 - `app/scraper/sources.py` has an `ng_storage` entry for both sites (TradingEconomics
@@ -1097,3 +1215,7 @@ It also gives the numbers every rule here needs: how far price moves per Bcf of 
 | 2026-10-02 | Recorder now sends a pre and a post Telegram summary (record only). Review addressed: 12.1 shock boundary already correct (test added); 10:45 fallback result added; divergence warning logged; wick and whole-candle-outside recorded but not used (undefined). |
 | 2026-10-02 | Wick rule ruled and built: veto if the opposing wick is bigger than the body (A) or over half the box width (B); a veto waits for the +15 minute filter. "Completely outside" = the close. No change to the nine saved weeks. Live test schedule for 6 to 8 Oct written down. |
 | 2026-10-02 | Readiness check: complete flow on the 1 Oct report with real Telegram (2 messages delivered); consensus-not-posted crash found on the 8 Oct probe and fixed. Not ready for a live NG trading signal (not built); ready to validate recording and notification. TWDR has no scheduled tasks; six stale WBOS tasks (an older project) still fire near the same times but fail and send nothing. |
+| 2026-10-02 | Flowcharts redrawn: natural gas chart rebuilt with every ruling (IST times and holiday releases, contract roll, rupee conversion, high-momentum band, wick veto, divergence skip, 10:45 fallback, salt as information only, whisper dropped, code versus you); a crude chart added; both used in the README. Generator: docs/img/make_flowcharts.py. |
+| 2026-10-02 | Sizing and IV note added: lot arithmetic (Rs 1,250 per point per lot), risk-first sizing with mini lots, and the 0.5 against 0.8 delta IV-crush table. Illustration, no ruling; pre-report IV note added to the flowchart. |
+| 2026-10-02 | Position type recorded: a directional option buyer who buys either a single CE or a single PE, never both at once (no straddle or strangle, no writing, no opposite-side hedge). The delta and IV tables are for that buyer. |
+| 2026-10-02 | `ng_signal` spec drafted (data-only engine, same pattern as the crude one: reuse the recorder's schedule, roll, bands and rate; wait for the EIA file; verdict, rupees per lot and the chart checklist by 20:05 IST; no price reading, no strikes). Nothing coded; build after the 8 Oct live test. |

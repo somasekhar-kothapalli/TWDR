@@ -1008,6 +1008,7 @@ Variety seen: units `M`, `m`, `MM`, `Mln`, `million`, `K`, plain thousands with 
 | 2026-10-02 | Two AlgoKing strategy pages added to the learning resources and summarised in Notes (agree on the 2M surprise and the move size; disagree on mixed data). |
 | 2026-10-02 | Two more AlgoKing pages (natural gas weather play and momentum) added to the learning resources and noted: tick size gives 3 to 5 cents per MMBtu = 30 to 50 ticks = $300 to $500 per NG contract. |
 | 2026-10-02 | TWDR-NG scoping started in `docs/twdr_ng.md`. TWDR-CL needs no change to run; optional later items: product-led case, source-disagreement warning, season weighting. |
+| 2026-10-02 | Position type recorded (applies to crude and natural gas): a directional option buyer who buys either a single CE or a single PE, never both at once. No straddle or strangle, no writing, no opposite-side hedge. |
 
 ## Inputs still to come
 
