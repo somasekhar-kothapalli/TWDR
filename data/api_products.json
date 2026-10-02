@@ -1,0 +1,11 @@
+{
+  "release_date": "29-09-2026",
+  "source": "forexfactory",
+  "from": "@FirstSquawk",
+  "posted_at": "2026-09-29T20:46:07+00:00",
+  "matched_crude_mb": 1.019,
+  "text": "API: Crude: 1.019M, Gasoline: +2.991M, Distillate: -0.286M |   U.s. Api Crude Oil Stock Change Was A Build Of 1.019 Mln, Versus A Forecast 1.9 Mln Draw, With Gasoline Stocks Up 2.991 Mln And Distillate Stocks Down 0.286 Mln",
+  "fetched_at": "02-10-2026 11:30",
+  "api_gasoline_mb": 2.991,
+  "api_distillate_mb": -0.286
+}

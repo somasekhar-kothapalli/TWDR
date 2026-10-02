@@ -1,0 +1,56 @@
+{
+  "release_date": "30-09-2026",
+  "status": "NO TRADE",
+  "reason": "crude +0.56 and gasoline -2.93 deviate in opposite directions, but crude is under 2: too small for Setup C",
+  "legs": {
+    "crude": {
+      "consensus": -0.3,
+      "api": 1.019,
+      "baseline": 0.35949999999999993,
+      "actual": 0.922,
+      "deviation": 0.5625000000000001,
+      "deviation_vs_consensus": 1.222
+    },
+    "gasoline": {
+      "consensus": -0.5,
+      "api": 2.991,
+      "baseline": 1.2455,
+      "actual": -1.684,
+      "deviation": -2.9295,
+      "deviation_vs_consensus": -1.184
+    },
+    "distillate": {
+      "consensus": -0.2,
+      "api": -0.286,
+      "baseline": -0.243,
+      "actual": -2.251,
+      "deviation": -2.008,
+      "deviation_vs_consensus": -2.0509999999999997
+    }
+  },
+  "net_deviation": -4.375,
+  "api_state": {
+    "api_net": 3.724,
+    "consensus_net": -1.0,
+    "gap": 4.724,
+    "state": "divergent"
+  },
+  "warnings": [],
+  "record_only": {
+    "net_deviation_vs_consensus": -2.013,
+    "cushing_change_mb": 0.553,
+    "refinery_util_change_pct": null,
+    "net_imports_change_mb": -0.468
+  },
+  "config_version": "tier1-0.1",
+  "late": false,
+  "schedule": {
+    "release": "20:00",
+    "deadline": "20:05",
+    "time_stop": "20:35",
+    "hard_exit": "22:30"
+  },
+  "data_source": "tradingeconomics",
+  "data_first_seen": "02-10-2026 11:30",
+  "computed_at": "02-10-2026 11:55"
+}
