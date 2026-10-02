@@ -1,18 +1,13 @@
 import logging
-import argparse
-import json
-import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
  
 import pandas as pd
 import yfinance as yf
 
-import httpx
-
 from app.utils.common import WTI_CANDLE_FILE, write_json
 
-logger = logging.getLogger("twdr.eia_levels")
+logger = logging.getLogger("twdr.wti_candle")
 
 NY, IST = ZoneInfo("America/New_York"), ZoneInfo("Asia/Kolkata")
 TICKER, RELEASE_ET = "CL=F", (10, 30)
@@ -24,7 +19,7 @@ def fetch(day):
     if isinstance(df.columns, pd.MultiIndex):  # type: ignore # newer yfinance returns (field, ticker) columns
         df.columns = df.columns.get_level_values(0) # type: ignore # newer yfinance returns (field, ticker) columns
     if df.empty: # type: ignore # newer yfinance returns (field, ticker) columns
-        sys.exit(f"No 5-minute data for {day}. Yahoo keeps ~60 days; older dates are gone.")
+        raise RuntimeError(f"No 5-minute data for {day}. Yahoo keeps ~60 days; older dates are gone.")
     df.index = (df.index.tz_localize("UTC") if df.index.tz is None else df.index).tz_convert(NY) # type: ignore # newer yfinance returns (field, ticker) columns
     return df
  
@@ -35,7 +30,7 @@ def release_candle(day):
     try:
         bar, before = df.loc[release], df.loc[release - timedelta(minutes=5)] # type: ignore # newer yfinance returns (field, ticker) columns
     except KeyError:
-        sys.exit(f"No bar at {release:%H:%M} ET on {day} (holiday, or the report moved that week).")
+        raise RuntimeError(f"No bar at {release:%H:%M} ET on {day} (holiday, or the report moved that week).")
     payload =  {
         "release_date": day.strftime("%d-%m-%Y"),
         "release_ist": release.astimezone(IST).strftime("%H:%M"),
