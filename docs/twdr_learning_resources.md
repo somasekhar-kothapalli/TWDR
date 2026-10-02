@@ -88,6 +88,8 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **API crude stock change, history and consensus** (Trading Economics): https://tradingeconomics.com/united-states/api-crude-oil-stock-change
 - **EIA crude inventories, calendar** (Investing.com event 75): https://www.investing.com/economic-calendar/eia-crude-oil-inventories-75
 - **EIA crude stocks change, history** (Trading Economics): https://tradingeconomics.com/united-states/crude-oil-stocks-change
+- **How Accurate Are EIA And API Inventory Reports?**, OilPrice.com (per its description: a week when EIA and API inventory changes disagreed and traders asked which is more accurate): https://oilprice.com/Energy/Crude-Oil/How-Accurate-Are-EIA-And-API-Inventory-Reports.amp.html
+  - Relevant to `docs/signal_engine.md` Inputs 8 and 11 (how often API and EIA agree, and whether API product data is more reliable). Only the title and description were checked; not read in full.
 
 ---
 
@@ -97,6 +99,8 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **CFTC Commitments of Traders**: https://www.cftc.gov (exact report page not retrieved). Read the "disaggregated" explanation before building the fetcher; managed money is your crowding signal.
 - **Kotak Securities via Business Standard, "Crude Oil at crossroads" (30 Sep 2026)**: https://www.business-standard.com/markets/commodities/crude-oil-at-crossroads-as-supply-recovery-meets-geopolitical-risk-in-october-126093000562_1.html
 - **OilPrice.com** (daily headlines, API/EIA summaries): https://oilprice.com
+  - **Oil Prices Jump On Surprise Crude Inventory Draw** (per its description: prices rose on a Wednesday-morning EIA surprise crude draw alongside a steep drop in US crude production): https://oilprice.com/Energy/Crude-Oil/Oil-Prices-Jump-On-Surprise-Crude-Inventory-Draw.html
+    - A worked example of a surprise-draw reaction, useful beside the Tier 1 setups in `docs/signal_engine.md`. Only the title and description were checked; not read in full.
 - **Rigzone weekly EIA summaries**: https://www.rigzone.com
 - **Baker Hughes rig count** (Fridays): https://rigcount.bakerhughes.com (not retrieved in search)
 - **RBI USD/INR reference rate**: on rbi.org.in. MCX converts NYMEX WTI with the last RBI reference rate for final settlement.
@@ -154,6 +158,16 @@ Compiled 30 Sep 2026 for the TWDR (crude oil, natural gas) setup.
 - **The ONLY Options Trading Course You Need**, Volatility Vibes, 3.5 hr (2026): https://www.youtube.com/watch?v=D_FZCL8A32U
   - Greeks from 52:12, implied vs realized volatility from 1:38:32. Leans toward option selling.
 - **Sheldon Natenberg interview**, tastylive, 19 min: https://www.youtube.com/watch?v=dfXzwZ8Zl3M
+
+### Implied volatility and expected moves (for the target-move estimate, `docs/signal_engine.md` Input 5)
+Titles checked via YouTube; durations not retrieved and the videos have not been watched.
+- **Implied Volatility & Standard Deviation Explained**, tastylive: https://www.youtube.com/watch?v=StEHQgvVoto
+- **Earnings Implied Volatility**, tastylive: https://www.youtube.com/watch?v=r4L9YZo4qag
+  - Event-driven implied volatility; the EIA report is the same kind of scheduled event, though this video is about equity earnings.
+- **How Reliable Are Expected Moves?**, tastylive: https://www.youtube.com/watch?v=MzVGEzQ835A
+  - Relevant to how far to trust an options-implied move as a target.
+- **Why Buying Options Loses Money (Even When You're Right) - IVP Explained**, The 3PM Trader: https://www.youtube.com/watch?v=ms6spgPHOvc
+  - Relevant to buying options into a known event (implied volatility premium and the post-release volatility drop).
 
 ### Positioning
 - **COT Report Best Practices**, Barchart x Carley Garner, 12 min: https://www.youtube.com/watch?v=GcZ6pXFTYaA
