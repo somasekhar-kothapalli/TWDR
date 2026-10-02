@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
+from app.utils import currency
 from app.utils.common import (API_PRODUCTS_FILE, API_REPORT_FILE, CONSENSUS_FILE, EIA_ACTUALS_FILE, IST, ROOT,
                               SIGNAL_DIR, SIGNAL_FILE, THRESHOLDS_FILE, fmt_ts, now_ist, parse_release_date, poll, read_json,
                               setup_logging, write_json)
@@ -195,7 +196,14 @@ def summary(r):
                   f"Check by {r['schedule']['deadline']}: {r['confirm']['check']}",
                   f"Stop beyond the {r['confirm']['stop_beyond']}; time stop {r['schedule']['time_stop']}, "
                   f"hard exit {r['schedule']['hard_exit']}"]
+    lines += [f"RUPEE: {n}" for n in r.get("currency", {}).get("notes", [])]
     return "\n".join(lines + [f"WARNING: {w}" for w in r["warnings"]])
+
+
+def attach_currency(r, usd_inr_trend):
+    """The rupee context (app/utils/currency.py): a note for the trader, never part of the decision."""
+    direction = {"CALL": "bullish", "PUT": "bearish"}.get(r.get("side"), "neutral")
+    r["currency"] = currency.context(usd_inr_trend, direction)
 
 
 def check_week(cons, api_report, today, allow_stale):
@@ -232,9 +240,15 @@ def run(once, allow_stale):
     except FileNotFoundError:
         products = None
     rel_day = check_week(cons, api_report, now_ist().date(), allow_stale)
+    try:  # before the wait, so it costs nothing after the print
+        usd_inr_trend = currency.trend_pct(currency.usdinr_closes(rel_day))
+    except Exception as exc:  # noqa: BLE001 - a context note must never stop the signal
+        log.warning("no USD/INR trend: %s", exc)
+        usd_inr_trend = None
     eia = wait_for_eia(cons["release_date"], th, once)
     now, sched = now_ist(), schedule(rel_day, th)
     r = evaluate(th, cons, api_report, products, eia)
+    attach_currency(r, usd_inr_trend)
     late = not allow_stale and now > sched["deadline"]
     if late and r["status"] == "SIGNAL":
         r["status"] = "LATE"

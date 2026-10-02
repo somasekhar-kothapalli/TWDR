@@ -77,6 +77,15 @@ def test_bad_api_products_values_are_ignored_not_fatal():
                        dict(release_date="29-09-2026", api_gasoline_mb="nan"), w)["gasoline"] is None and len(w) == 2
 
 
+def test_rupee_context_follows_the_side_and_reaches_the_summary():
+    r = run(cons=(-1.0, 0.5, -0.5), api=(-1.0, 0.5, -0.5), eia=(-3.0, -0.5, -1.0))  # a bullish call
+    se.attach_currency(r, -0.6)  # USD/INR down 0.6% over 5 sessions: the rupee strengthened, against a bullish MCX move
+    assert r["currency"]["effect"] == "dampens" and r["currency"]["direction"] == "inr_strengthening"
+    sched = {"deadline": "20:05", "time_stop": "20:35", "hard_exit": "22:30"}
+    assert "RUPEE: INR sharply strengthened 0.60%" in se.summary({**r, "schedule": sched, "status": "SIGNAL"})
+    se.attach_currency(run(eia=(0.5, 0, 0)), None)  # no setup, no history: unknown, no crash
+
+
 def test_summary_is_what_the_trader_needs():
     sched = {"deadline": "20:05", "time_stop": "20:35", "hard_exit": "22:30"}
     r = {**run(cons=(-1.0, 0.5, -0.5), api=(-1.0, 0.5, -0.5), eia=(-3.0, -0.5, -1.0)), "schedule": sched, "status": "SIGNAL"}
