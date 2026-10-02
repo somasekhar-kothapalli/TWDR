@@ -16,11 +16,14 @@ ROOT = DATA_DIR.parent
 # stage. Import these; never re-spell a file name (a rename would silently split them).
 CONSENSUS_FILE = DATA_DIR / "consensus.json"      # consensus_fetcher -> signal_engine
 API_REPORT_FILE = DATA_DIR / "api_report.json"    # api_monitor       -> signal_engine
+API_PRODUCTS_FILE = DATA_DIR / "api_products.json"  # HAND-ENTERED Tue night (api_gasoline_mb, api_distillate_mb, release_date): signal_engine
+THRESHOLDS_FILE = DATA_DIR / "thresholds.json"    # hand-edited       -> signal_engine
 EIA_ACTUALS_FILE = DATA_DIR / "eia_actuals.json"  # eia_actuals       -> signal_engine
 WTI_CANDLE_FILE = DATA_DIR / "wti_candle.json"  # utils.wti_candle       -> signal_engine
 MARKET_FILE = DATA_DIR / "market.json"            # market_data       -> signal_engine
 SURPRISE_HISTORY_FILE = DATA_DIR / "surprise_history.json"  # surprise_history -> signal_engine (sigma_forecast)
 SIGNAL_FILE = DATA_DIR / "signal.json"            # signal_engine
+SIGNAL_DIR = DATA_DIR / "signals"                # signal_engine: one <YYYY-MM-DD>.json per release (history, arrival times)
 JOURNAL_FILE = DATA_DIR / "journal.json"          # journal (your own fills and the post-print price paths)
 CRUDE_RECORD_FILE = DATA_DIR / "crude_record.json"  # crude_recorder (every Wednesday: decision + post-print price path)
 NG_RECORD_FILE = DATA_DIR / "ng_record.json"    # ng_recorder (natural gas storage prints and price paths; v0.2, record only)
@@ -65,10 +68,23 @@ def now_utc():
 def now_ist():
     return datetime.now(IST)
 
+def read_json(path):
+    return json.loads(path.read_text(encoding="utf-8"))  # raises FileNotFoundError if missing
 
-def write_json(path, payload):
+def write_json(path, payload, tries=10):
+    """Write atomically (temp file, then replace) so a stage polling the file never reads a half-written one.
+    On Windows the replace fails while a reader has the file open, so it is retried for a moment."""
     path.parent.mkdir(exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+    for attempt in range(tries):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if attempt == tries - 1:
+                raise
+            time.sleep(0.05)
 
 
 def poll(attempt, once, interval_s, timeout_s, log):

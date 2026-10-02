@@ -1,0 +1,37 @@
+{
+  "version": "tier1-0.1",
+  "api_weight": 0.5,
+  "time_stop_min": 35,
+  "hard_exit_hours": 2.5,
+  "min_leg_dev": 0.1,
+  "min_net": 2.0,
+  "api_state_gap": 1.0,
+  "trap_api_min": 4.0,
+  "trap_eia_min": 2.0,
+  "conflict_min_crude_dev": 2.0,
+  "conflict_move_usd": 0.5,
+  "move_bands": [
+    [
+      0,
+      0.3,
+      0.5
+    ],
+    [
+      2.0,
+      0.6,
+      1.0
+    ],
+    [
+      5.0,
+      1.2,
+      2.0
+    ]
+  ],
+  "rule_of_thumb_per_mb": [
+    0.15,
+    0.25
+  ],
+  "deadline_min": 5,
+  "poll_interval_s": 5,
+  "max_wait_min": 15
+}
