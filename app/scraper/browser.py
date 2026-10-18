@@ -8,11 +8,19 @@ RELOAD_RETRIES = 2
 
 
 @contextmanager
-def browser_session():
-    """Launch one headless chromium browser + page, reusable across multiple .goto() calls.
+def browser_session(channel=None, new_tab=False, timezone_id=None, headless=False):
+    """Launch one browser window + page (visible unless `headless`), reusable across multiple .goto() calls.
 
     Use this instead of render_page/render_html when a scrape needs several page loads
     (e.g. paginated lists) — spinning up a fresh browser per page is wasteful.
+
+    headless is the caller's choice (a scraper's `headless` attribute): visible by default, as investing.com and the
+    other sites we scrape do not cope with a headless browser.
+    channel="chrome" drives the installed Google Chrome instead of Playwright's bundled Chromium (falls back to the
+    bundled one, with a warning, when Chrome is not installed). investing.com's CDN answers the bundled Chromium
+    with 403 for its scripts and styles, so the page never hydrates (no "Show More"); real Chrome gets them.
+    new_tab=True opens the window's first tab on about:blank and scrapes in a second, new tab.
+    timezone_id (e.g. "UTC") fixes the zone the page's own scripts display times in.
     """
     _UA = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -21,21 +29,24 @@ def browser_session():
     )
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(
-            headless=True,
-            slow_mo=150,
-            args=[
-                "--no-sandbox",
-                "--disable-blink-features=AutomationControlled",
-                "--disable-dev-shm-usage",
-            ],
-        )
-        ctx = browser.new_context(
-            user_agent=_UA,
-            viewport={"width": 1366, "height": 768},
-            locale="en-US",
-        )
+        launch = dict(headless=headless, slow_mo=150,
+                      args=["--no-sandbox", "--disable-blink-features=AutomationControlled", "--disable-dev-shm-usage"])
+        try:
+            browser = pw.chromium.launch(channel=channel, **launch) if channel else pw.chromium.launch(**launch)
+        except Exception as exc:  # noqa: BLE001 - Chrome not installed: use the bundled browser
+            log.warning("browser channel %s unavailable (%s): using the bundled Chromium", channel, str(exc).splitlines()[0])
+            browser, channel = pw.chromium.launch(**launch), None
+        context = dict(viewport={"width": 1366, "height": 768}, locale="en-US")
+        if channel is None:
+            context["user_agent"] = _UA  # real Chrome keeps its own user agent
+        if timezone_id:
+            context["timezone_id"] = timezone_id
+        ctx = browser.new_context(**context)
+        if new_tab:
+            ctx.new_page().goto("about:blank")  # the window's first tab; the scrape gets a new one
         page = ctx.new_page()
+        if new_tab:
+            page.bring_to_front()
         log.debug("Browser opened")
         try:
             yield page

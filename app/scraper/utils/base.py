@@ -32,6 +32,10 @@ class CalendarScraper:
     wait_selector = ""
     page_gap_s = 0  # minimum seconds between page loads; sites that rate-limit set this
     session_gap_s = 0  # advice for callers that open several sessions in a row
+    headless = False  # run the browser without a window; set by the calling script, not hard-coded in scraper.browser
+    browser_channel = None  # "chrome": drive the installed Chrome (see scraper.browser.browser_session)
+    new_tab = False  # scrape in a second tab of a window whose first tab stays on about:blank
+    timezone_id = None  # fix the zone the page displays times in, e.g. "UTC"
 
     def __init__(self, timeout_ms=30000, page_gap_s=None):
         self.timeout_ms = timeout_ms
@@ -43,7 +47,8 @@ class CalendarScraper:
         self.last_html = None
 
     def __enter__(self):
-        self._session_cm = browser_session()
+        self._session_cm = browser_session(channel=self.browser_channel, new_tab=self.new_tab, timezone_id=self.timezone_id,
+                                         headless=self.headless)
         self._page = self._session_cm.__enter__()
         return self
 

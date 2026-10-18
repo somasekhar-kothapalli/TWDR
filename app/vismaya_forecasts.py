@@ -1,19 +1,25 @@
 """Collect Investing.com "Forecast" values for the EIA weekly petroleum report into Vismaya's wpsr.forecasts.
 
-    python -m app.vismaya_forecasts [--indicators eia_crude eia_gasoline ...] [--since 2011-08-01] [--dry-run] [--db PATH]
+    python -m app.vismaya_forecasts [--indicators eia_crude eia_gasoline ...] [--since 2011-08-01 | --latest] [--headless] [--dry-run] [--db PATH]
 
-Each run opens the five crude-report event pages (crude, gasoline, distillate, Cushing, refinery), one browser
-session per page and 60 s apart (investing.com 403s anything faster, so a full run takes about 5 minutes), keeps every page
-untouched under raw/ (registered in ref.raw_files, so each value traces to its download) and parses the 10 most
-recent releases each page lists; with --since it also clicks the table's "Show More" control (10 older releases per
-click, about 80 clicks back to 2011) until the oldest row reaches that date. Values are stored in the report's own unit (thousand barrels; refinery in percentage points),
-a blank forecast is NULL, never 0. A row is inserted only when its release matches a ref.calendar row (the
+A one-off HISTORICAL collector, run by hand (it is not scheduled). It opens the five crude-report event pages (crude,
+gasoline, distillate, Cushing, refinery), one browser session per page and 60 s apart (investing.com 403s anything
+faster, so a full run takes several minutes), clicks the table's "Show More" control (10 older releases per click, about
+80 clicks) until the oldest row reaches --since (default 2011-08-01, the first calendar week; --latest skips the clicking
+and takes only the 10 newest releases), keeps every page untouched under raw/ (registered in ref.raw_files, so each value
+traces to its download) and parses all the rows. Values are stored in the report's own unit (thousand barrels; refinery
+in percentage points), a blank forecast is NULL, never 0. A row is inserted only when its release matches a ref.calendar row (the
 release within 2 days of the expected one); rows with no match are counted and left out. Natural gas
 (wngsr.forecasts) is a later extension: add the ng_storage indicator and a second table.
 
-History back to 2011 (--from-capture): a scripted browser cannot expand the history (investing.com's CDN returns 403 to
-it, so the page never hydrates). The table was instead expanded by hand in the Claude desktop browser pane and its rows
-copied out as "YYYYMMDD,actual,forecast,previous" lines, one set of <slug>_c<N>.txt chunk files per page, each chunk
+Browser: a visible window of the installed Google Chrome, scraping in a new second tab (the window's first tab stays on
+about:blank), with the page's display zone fixed to UTC. Playwright's bundled Chromium does not work for the history:
+investing.com's CDN returns 403 to it for scripts and styles, so the page never hydrates and "Show More" does nothing.
+With Chrome the expansion runs by itself (checked 18 Oct 2026: 790 crude rows back to 2011, identical to the hand capture
+below, release times in UTC).
+
+--from-capture (the first backfill, before Chrome was tried): the table was expanded by hand in the Claude desktop browser
+pane and its rows copied out as "YYYYMMDD,actual,forecast,previous" lines, one set of <slug>_c<N>.txt chunk files per page, each chunk
 checked against a checksum taken in the page. `--from-capture DIR` joins the chunks of every page found in DIR, keeps the
 joined text under raw/ as the raw file (content type text/csv, source_tz Asia/Kolkata: the pane's display zone; release
 times were not captured) and loads it like a fetched page. Cushing and refinery pages hold forecasts only for some weeks,
@@ -26,7 +32,7 @@ import os
 import subprocess
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -42,6 +48,7 @@ logger = logging.getLogger("twdr.vismaya_forecasts")
 SOURCE = "investing_com"
 SOURCE_TZ = "UTC"  # the table's time column reads 14:30 for the 10:30 ET release (checked 21 Oct 2026)
 MATCH_WINDOW = timedelta(days=2)
+HISTORY_FROM = date(2011, 8, 1)  # the first week in ref.calendar (report_seq 1 is released 3 Aug 2011)
 # indicator -> (canonical field, unit after parsing, factor from the displayed number): the page shows
 # million barrels ("-8.557M"), the database keeps thousand barrels; refinery utilisation is a weekly change in points.
 FIELDS = {
@@ -223,9 +230,10 @@ def main(argv=None):
     setup_logging()
     parser = argparse.ArgumentParser(description="Collect Investing.com forecasts for the EIA petroleum report into Vismaya")
     parser.add_argument("--indicators", nargs="+", choices=list(FIELDS), default=list(FIELDS))
-    parser.add_argument("--since", type=lambda s: datetime.strptime(s, "%Y-%m-%d").date(),
-                        help="history: click Show More on each page until its oldest release is on or before this date "
-                             "(e.g. 2011-08-01); default: only the 10 latest releases")
+    parser.add_argument("--since", type=lambda s: datetime.strptime(s, "%Y-%m-%d").date(), default=HISTORY_FROM,
+                        help="click Show More on each page until its oldest release is on or before this date (default 2011-08-01)")
+    parser.add_argument("--headless", action="store_true", help="run Chrome without a window (default: a visible window)")
+    parser.add_argument("--latest", action="store_true", help="no history: only the 10 newest releases per page")
     parser.add_argument("--from-capture", metavar="DIR", help="load browser-pane capture chunk files from DIR instead of fetching")
     parser.add_argument("--dry-run", action="store_true", help="fetch and print; write nothing")
     parser.add_argument("--db", default=str(VISMAYA_DB_FILE))
@@ -240,8 +248,11 @@ def main(argv=None):
         if loaded:
             time.sleep(InvestingCalendarScraper.session_gap_s)
         loaded.append(slug)
-        with InvestingCalendarScraper() as scraper:
-            scraper.show_more_until = args.since
+        scraper = InvestingCalendarScraper()
+        scraper.show_more_until = None if args.latest else args.since
+        scraper.browser_channel, scraper.new_tab, scraper.timezone_id = "chrome", True, "UTC"  # real Chrome hydrates the page
+        scraper.headless = args.headless
+        with scraper:
             page, _ = scraper.fetch_with_soup(slug)
             return scraper.last_html if page else None
 
