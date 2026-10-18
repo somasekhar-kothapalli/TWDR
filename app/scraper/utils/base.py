@@ -95,10 +95,14 @@ class CalendarScraper:
         try:
             if self._page is not None:
                 goto(self._page, url, wait_selector=self.wait_selector, timeout_ms=self.timeout_ms)
+                self.after_load(self._page)
                 return self._page.content()
             return render_html(url, wait_selector=self.wait_selector, timeout_ms=self.timeout_ms)
         finally:
             self._last_load = time.monotonic()
+
+    def after_load(self, page):
+        """Hook run on the loaded page before its HTML is read (e.g. to expand a history table). Default: nothing."""
 
     def parse_rows(self, soup):
         raise NotImplementedError

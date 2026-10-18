@@ -13,6 +13,26 @@ from ..utils.cli import run_cli
 
 INVESTING_BASE = "https://in.investing.com/economic-calendar/"
 OCCURRENCE_TABLE_SELECTOR = 'table[data-test="occurrence-table"]'
+MAX_SHOW_MORE_CLICKS = 120  # 10 rows each: about 23 years of weekly releases
+SHOW_MORE_JS = r"""async ([sel, stop, maxClicks]) => {
+  const rows = () => document.querySelectorAll(sel + ' tbody tr');
+  const control = () => [...document.querySelectorAll('div')].find(d => d.children.length === 0 && d.textContent.trim() === 'Show More');
+  const oldest = () => {  // the last row's date 'DD-MM-YYYY' as a number YYYYMMDD
+    const r = rows(); const cell = r.length ? r[r.length - 1].querySelector('td') : null;
+    const m = cell ? cell.textContent.trim().match(/^(\d\d)-(\d\d)-(\d{4})$/) : null;
+    return m ? Number(m[3] + m[2] + m[1]) : null;
+  };
+  let prev = rows().length, stale = 0;
+  for (let i = 0; i < maxClicks; i++) {
+    const c = control(); const d = oldest();
+    if (!c || (d !== null && d <= stop)) break;
+    c.click();
+    await new Promise(r => setTimeout(r, 700));
+    const n = rows().length;
+    if (n === prev) { if (++stale >= 4) break; } else { stale = 0; prev = n; }
+  }
+  return rows().length;
+}"""
 
 
 class InvestingCalendarScraper(CalendarScraper):
@@ -29,6 +49,17 @@ class InvestingCalendarScraper(CalendarScraper):
     wait_selector = OCCURRENCE_TABLE_SELECTOR
     page_gap_s = 10
     session_gap_s = 60  # pause between separate browser sessions (it 403/429s back-to-back ones)
+    show_more_until = None  # a date: click "Show More" (10 older releases per click) until the oldest row is on or before it
+
+    def after_load(self, page):
+        """Expand the history table when `show_more_until` is set. The control under the table is a plain <div> reading
+        "Show More" (not a <button>: the page's only <button> of that name expands the description); a JS click on it
+        works in headless Chromium, a Playwright locator click did nothing. It stops at the date, when the control is
+        gone, or after 4 clicks that add no row."""
+        if self.show_more_until is None:
+            return
+        stop = int(self.show_more_until.strftime("%Y%m%d"))
+        page.evaluate(SHOW_MORE_JS, [OCCURRENCE_TABLE_SELECTOR, stop, MAX_SHOW_MORE_CLICKS])
 
     def parse_rows(self, soup):
         table = soup.find("table", {"data-test": "occurrence-table"})

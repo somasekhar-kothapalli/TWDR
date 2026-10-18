@@ -44,6 +44,15 @@ def test_orphan_checks_catch_unknown_regions_and_fields():
     assert bad["wngsr.values with unknown region"] == 2 and bad["wngsr.values without calendar"] == 0
 
 
+def test_shell_runs_statements_lists_tables_and_survives_errors():
+    con = seeded()
+    lines = iter([".tables", "select 1", "as one;", "select * from nope;", "select count(*) from wngsr.forecasts;", ".quit"])
+    out = []
+    vismaya_db.run_shell(con, read=lambda prompt: next(lines), write=out.append)
+    text = "\n".join(out)
+    assert "wngsr.forecasts  (2 rows)" in text and text.count("error:") == 1
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
