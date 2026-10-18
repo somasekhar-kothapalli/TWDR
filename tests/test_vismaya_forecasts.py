@@ -1,7 +1,5 @@
 """Run: python -m tests.test_vismaya_forecasts   (no network; the HTML mimics Investing.com's occurrence table)."""
-import tempfile
 from datetime import date, datetime, time, timezone
-from pathlib import Path
 
 from app import vismaya_db
 from app import vismaya_forecasts as vf
@@ -48,12 +46,6 @@ def test_match_seq_takes_the_closest_release_date_within_two_days():
     assert vf.match_seq([], date(2026, 9, 30)) == (None, None)
 
 
-def test_parse_capture_lines():
-    rows = vf.parse_capture("20261021,,,-8.557\n20261015,-8.557,0.2,-3.186\n", 1000)
-    assert rows[0] == {"release_date": date(2026, 10, 21), "release_time": None, "actual": None, "forecast": None, "previous": -8557.0}
-    assert rows[1]["forecast"] == 200.0 and rows[1]["actual"] == -8557.0
-
-
 def test_drop_monthly_removes_the_monthly_series_but_keeps_isolated_weekly_forecast_rows():
     rows = [{"release_date": d} for d in (date(2013, 6, 5), date(2013, 5, 30), date(2013, 5, 1), date(2013, 4, 1), date(2013, 3, 1))]
     kept = [r["release_date"] for r in vf.drop_monthly(rows)]
@@ -88,21 +80,19 @@ def test_load_writes_raw_registry_and_matched_rows_only():
 def test_two_rows_for_one_report_keep_the_one_with_a_forecast():
     con = vismaya_db.connect(":memory:")
     con.execute("INSERT INTO ref.calendar VALUES ('WPSR',1,'2023-11-10','2023-11-15 15:30:00+00',false,null,null,null,false,null)")
-    rows = vf.parse_capture("20231115,3.6,1.793,13.869\n20231115,13.869,,0.774\n", 1000)   # a glitch on the page
+    rows = [{"release_date": date(2023, 11, 15), "release_time": None, "actual": 3600.0, "forecast": 1793.0, "previous": 13869.0},
+            {"release_date": date(2023, 11, 15), "release_time": None, "actual": 13869.0, "forecast": None, "previous": 774.0}]  # a glitch on the page
     got = {"eia_crude": ("slug", "txt", rows)}
-    inserted, unmatched, duplicates = vf.load(con, got, datetime(2026, 10, 18, tzinfo=timezone.utc), save=lambda *a: ("shaX", "investing_com/slug/c.csv", 1),
-                                              source_tz="Asia/Kolkata", content_type="text/csv")
+    inserted, unmatched, duplicates = vf.load(con, got, datetime(2026, 10, 18, tzinfo=timezone.utc), save=lambda *a: ("shaX", "investing_com/slug/c.html", 1))
     assert (inserted, unmatched, duplicates) == (1, 0, 1)
-    assert con.execute("SELECT actual, forecast, source_tz FROM wpsr.forecasts").fetchone() == (3600.0, 1793.0, "Asia/Kolkata")
-    assert con.execute("SELECT content_type FROM ref.raw_files").fetchone() == ("text/csv",)
+    assert con.execute("SELECT actual, forecast FROM wpsr.forecasts").fetchone() == (3600.0, 1793.0)
 
 
-def test_capture_files_join_chunks_in_numeric_order():
-    with tempfile.TemporaryDirectory() as tmp:
-        slug = "eia-crude-oil-inventories-75"
-        for n, line in ((0, "a"), (2, "c"), (10, "k"), (1, "b")):
-            (Path(tmp) / f"{slug}_c{n}.txt").write_text(line, encoding="utf-8")
-        assert vf.capture_files(tmp) == {"eia_crude": (slug, "a\nb\nc\nk")}
+def test_collect_drops_the_monthly_distillate_rows():
+    html = page(["05-06-2013", "14:30", "2.611M", "1.228M", "1.851M"], ["30-05-2013", "14:30", "1.851M", "0.017M", "-1.052M"],
+                ["01-05-2013", "14:30", "0.793M", "", "-1.937M"], ["01-04-2013", "14:30", "-1.937M", "", "-2.167M"])
+    got, _ = vf.collect(["eia_distillate"], lambda slug: html)
+    assert [r["release_date"] for r in got["eia_distillate"][2]] == [date(2013, 6, 5), date(2013, 5, 30)]
 
 
 if __name__ == "__main__":

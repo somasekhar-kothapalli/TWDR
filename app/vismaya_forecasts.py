@@ -15,15 +15,9 @@ release within 2 days of the expected one); rows with no match are counted and l
 Browser: a visible window of the installed Google Chrome, scraping in a new second tab (the window's first tab stays on
 about:blank), with the page's display zone fixed to UTC. Playwright's bundled Chromium does not work for the history:
 investing.com's CDN returns 403 to it for scripts and styles, so the page never hydrates and "Show More" does nothing.
-With Chrome the expansion runs by itself (checked 18 Oct 2026: 790 crude rows back to 2011, identical to the hand capture
-below, release times in UTC).
-
---from-capture (the first backfill, before Chrome was tried): the table was expanded by hand in the Claude desktop browser
-pane and its rows copied out as "YYYYMMDD,actual,forecast,previous" lines, one set of <slug>_c<N>.txt chunk files per page, each chunk
-checked against a checksum taken in the page. `--from-capture DIR` joins the chunks of every page found in DIR, keeps the
-joined text under raw/ as the raw file (content type text/csv, source_tz Asia/Kolkata: the pane's display zone; release
-times were not captured) and loads it like a fetched page. Cushing and refinery pages hold forecasts only for some weeks,
-so their captures hold just the rows that have one.
+With Chrome the expansion runs by itself (checked 18 Oct 2026: 790 crude rows back to 2011, identical to an earlier hand
+capture of the same page; release times are in UTC). The distillate page has a monthly series before mid-2013: those
+rows are dropped. Cushing and refinery have a forecast only in some weeks: their other rows are kept with a NULL forecast.
 """
 import argparse
 import hashlib
@@ -33,7 +27,6 @@ import subprocess
 import time
 import uuid
 from datetime import date, datetime, timedelta, timezone
-from pathlib import Path
 
 from bs4 import BeautifulSoup
 
@@ -46,7 +39,7 @@ from app.utils.common import RAW_DIR, ROOT, VISMAYA_DB_FILE, setup_logging
 logger = logging.getLogger("twdr.vismaya_forecasts")
 
 SOURCE = "investing_com"
-SOURCE_TZ = "UTC"  # the table's time column reads 14:30 for the 10:30 ET release (checked 21 Oct 2026)
+SOURCE_TZ = "UTC"  # the table's time column reads 14:30 for the 10:30 ET release (checked 18 Oct 2026)
 MATCH_WINDOW = timedelta(days=2)
 HISTORY_FROM = date(2011, 8, 1)  # the first week in ref.calendar (report_seq 1 is released 3 Aug 2011)
 # indicator -> (canonical field, unit after parsing, factor from the displayed number): the page shows
@@ -101,20 +94,6 @@ def drop_monthly(rows):
     return [r for r in rows if not isolated(r["release_date"])]
 
 
-def parse_capture(text, factor):
-    """Browser-pane capture lines 'YYYYMMDD,actual,forecast,previous' (million barrels or points; blank = None) -> rows like
-    parse_table, scaled by `factor`; release_time is None (not captured)."""
-    out = []
-    for line in text.splitlines():
-        d, *vals = line.strip().split(",")
-        if not line.strip():
-            continue
-        v = [None if x == "" else round(float(x) * factor, 6) for x in vals]
-        out.append({"release_date": datetime.strptime(d, "%Y%m%d").date(), "release_time": None,
-                    "actual": v[0], "forecast": v[1], "previous": v[2]})
-    return out
-
-
 def save_raw(html, slug, captured):
     """Write the page as downloaded to raw/investing_com/<slug>/<UTC timestamp>.html -> (sha256, path relative to raw/, bytes)."""
     data = html.encode("utf-8")
@@ -133,6 +112,8 @@ def collect(indicators, get_html):
         slug = sources.slug_for(indicator, "investing")
         html = get_html(slug)
         rows = parse_table(html, FIELDS[indicator][2]) if html else []
+        if indicator == "eia_distillate":
+            rows = drop_monthly(rows)
         if rows:
             got[indicator] = (slug, html, rows)
         else:
@@ -140,7 +121,7 @@ def collect(indicators, get_html):
     return got, failed
 
 
-def load(con, got, captured, save=save_raw, source_tz=SOURCE_TZ, content_type="text/html"):
+def load(con, got, captured, save=save_raw):
     """Write the raw files and the forecast rows. Returns (inserted, unmatched, duplicates): rows with no calendar match,
     and rows dropped because another row of the same page already took that report (nearest date wins; on a tie the row
     with a forecast does: the page has glitches such as two rows dated 15 Nov 2023)."""
@@ -150,7 +131,7 @@ def load(con, got, captured, save=save_raw, source_tz=SOURCE_TZ, content_type="t
         field, unit, _ = FIELDS[indicator]
         sha, rel, size = save(html, slug, captured)
         con.execute("INSERT INTO ref.raw_files VALUES (?,?,?,?,?,?,?,?,'WPSR',NULL) ON CONFLICT DO NOTHING",
-                    [sha, rel, SOURCE, f"{InvestingCalendarScraper.base_url}{slug}", captured, size, content_type, source_tz])
+                    [sha, rel, SOURCE, f"{InvestingCalendarScraper.base_url}{slug}", captured, size, "text/html", SOURCE_TZ])
         best = {}
         for r in rows:
             seq, gap = match_seq(calendar, r["release_date"])
@@ -164,31 +145,10 @@ def load(con, got, captured, save=save_raw, source_tz=SOURCE_TZ, content_type="t
                     best[seq] = (gap, r["forecast"] is None, r)
         for seq, (_, _, r) in best.items():
             con.execute("INSERT INTO wpsr.forecasts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                        [seq, field, SOURCE, slug, r["release_date"], r["release_time"], source_tz,
+                        [seq, field, SOURCE, slug, r["release_date"], r["release_time"], SOURCE_TZ,
                          r["actual"], r["forecast"], r["previous"], unit, captured, sha])
             inserted += 1
     return inserted, unmatched, duplicates
-
-
-def capture_files(directory):
-    """{indicator: (slug, joined text)} for every page with chunk files '<slug>_c<N>.txt' in `directory`."""
-    found = {}
-    for indicator in FIELDS:
-        slug = sources.slug_for(indicator, "investing")
-        chunks = sorted(Path(directory).glob(f"{slug}_c*.txt"), key=lambda p: int(p.stem.rsplit("_c", 1)[1]))
-        if chunks:
-            found[indicator] = (slug, "\n".join(c.read_text(encoding="utf-8") for c in chunks))
-    return found
-
-
-def save_capture(text, slug, captured):
-    """Keep the joined capture under raw/ -> (sha256, path relative to raw/, bytes). Same shape as save_raw."""
-    data = text.encode("utf-8")
-    rel = f"{SOURCE}/{slug}/{captured:%Y%m%dT%H%M%SZ}_browser_capture.csv"
-    path = RAW_DIR / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(data)
-    return hashlib.sha256(data).hexdigest(), rel, len(data)
 
 
 def git_commit():
@@ -196,34 +156,6 @@ def git_commit():
         return subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip() or None
     except OSError:
         return None
-
-
-def run_capture(args, captured):
-    """Load browser-pane capture chunk files (see the module docstring)."""
-    files = capture_files(args.from_capture)
-    got = {}
-    for indicator, (slug, text) in files.items():
-        if indicator not in args.indicators:
-            continue
-        rows = parse_capture(text, FIELDS[indicator][2])
-        if indicator == "eia_distillate":
-            rows = drop_monthly(rows)
-        got[indicator] = (slug, text, rows)
-        logger.info("%s: %d rows, %s to %s, %d with a forecast", indicator, len(rows), rows[-1]["release_date"], rows[0]["release_date"],
-                    sum(r["forecast"] is not None for r in rows))
-    if args.dry_run:
-        return 0
-    con = vismaya_db.connect(args.db)
-    run_id = str(uuid.uuid4())
-    con.execute("INSERT INTO meta.pipeline_runs VALUES (?,?,?,?,NULL,'running',NULL,NULL)",
-                [run_id, "app.vismaya_forecasts --from-capture", git_commit(), captured])
-    inserted, unmatched, duplicates = load(con, got, captured, save=save_capture, source_tz="Asia/Kolkata", content_type="text/csv")
-    message = f"{inserted} inserted, {unmatched} rows with no ref.calendar match, {duplicates} duplicates dropped (browser capture)"
-    con.execute("UPDATE meta.pipeline_runs SET finished_at_utc = ?, status = 'success', rows_loaded = ?, message = ? WHERE run_id = ?",
-                [datetime.now(timezone.utc), inserted, message, run_id])
-    con.close()
-    logger.info(message)
-    return 0
 
 
 def main(argv=None):
@@ -234,7 +166,6 @@ def main(argv=None):
                         help="click Show More on each page until its oldest release is on or before this date (default 2011-08-01)")
     parser.add_argument("--headless", action="store_true", help="run Chrome without a window (default: a visible window)")
     parser.add_argument("--latest", action="store_true", help="no history: only the 10 newest releases per page")
-    parser.add_argument("--from-capture", metavar="DIR", help="load browser-pane capture chunk files from DIR instead of fetching")
     parser.add_argument("--dry-run", action="store_true", help="fetch and print; write nothing")
     parser.add_argument("--db", default=str(VISMAYA_DB_FILE))
     args = parser.parse_args(argv)
@@ -256,12 +187,11 @@ def main(argv=None):
             page, _ = scraper.fetch_with_soup(slug)
             return scraper.last_html if page else None
 
-    if args.from_capture:
-        return run_capture(args, captured)
     try:
         got, failed = collect(args.indicators, get_html)
         for indicator, (_, _, rows) in got.items():
-            logger.info("%s: %d releases, newest %s (forecast %s)", indicator, len(rows), rows[0]["release_date"], rows[0]["forecast"])
+            logger.info("%s: %d releases, %s to %s, %d with a forecast", indicator, len(rows), rows[-1]["release_date"],
+                        rows[0]["release_date"], sum(r["forecast"] is not None for r in rows))
         if failed:
             logger.error("no usable page for: %s", ", ".join(failed))
         if args.dry_run:
