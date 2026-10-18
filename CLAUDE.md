@@ -21,11 +21,13 @@ python docs/img/make_iv_tables.py                          # redraw docs/img/twd
 python docs/img/make_flowcharts.py                         # redraw docs/img/twdr_cl_flow.png and twdr_ng_flow.png (used in README.md); edit the script when a rule changes
 python -m app.ng_recorder [pre|post|backfill] [--date DD-MM-YYYY]   # natural gas, record only -> data/ng_record.json: pre ~19:55 IST (consensus, USD/INR with age), post >=90 min after the release (EIA table, salt ratios, NG=F bars, entry-rule result), backfill = the reports Yahoo still has (~60 days); pre and post send a Telegram summary (record only, not a signal)
 python -m app.vismaya_db                                   # create/update data/vismaya.duckdb from db/vismaya_schema.sql (DuckDB, git-ignored; schema only, no loaders yet)
+python -m app.vismaya_calendar                             # seed ref.calendar (WPSR, 794 expected releases) from data/wpsr_expected_calendar_2011_2026.csv; idempotent
+python -m app.vismaya_forecasts [--indicators ...] [--dry-run]  # Investing.com forecasts for crude/gasoline/distillate/Cushing/refinery -> raw/ + ref.raw_files + wpsr.forecasts; one browser session per page, 60 s apart (~5 min); needs ref.calendar
 python -m app.utils.wti_candle                              # see note below
 python -m app.scraper.sites.investing --slug <slug> [--date DD-MM-YYYY]   # debug one scraper (cli.py)
 ```
 
-Tests (no pytest installed; each file also runs as a module, fake scrapers, no network): `python -m tests.test_signal_engine`, `python -m tests.test_eia_actuals`, `python -m tests.test_api_products`, `python -m tests.test_ng_recorder`, `python -m tests.test_currency`, `python -m tests.test_vismaya_db`. `sources.py` mentions `tests/test_sources.py`, which is absent. No linter config.
+Tests (no pytest installed; each file also runs as a module, fake scrapers, no network): `python -m tests.test_signal_engine`, `python -m tests.test_eia_actuals`, `python -m tests.test_api_products`, `python -m tests.test_ng_recorder`, `python -m tests.test_currency`, `python -m tests.test_vismaya_db`, `python -m tests.test_vismaya_calendar`, `python -m tests.test_vismaya_forecasts`. `sources.py` mentions `tests/test_sources.py`, which is absent. No linter config.
 
 ## Architecture
 

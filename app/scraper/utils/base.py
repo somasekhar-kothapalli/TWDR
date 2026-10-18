@@ -40,6 +40,7 @@ class CalendarScraper:
         self._page = None
         self._session_cm = None
         self._last_load = None
+        self.last_html = None
 
     def __enter__(self):
         self._session_cm = browser_session()
@@ -70,6 +71,7 @@ class CalendarScraper:
             log.exception(f"{name}: page render failed for slug={slug}")
             return None, None
 
+        self.last_html = html  # the page exactly as downloaded, for callers that archive it (Vismaya raw/)
         soup = BeautifulSoup(html, "html.parser")
         rows = self.parse_rows(soup)
         stats = self.parse_stats(soup, rows)
