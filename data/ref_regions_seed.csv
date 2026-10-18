@@ -1,0 +1,9 @@
+report_type,region,region_scheme,parent_region,valid_from,valid_to,description
+WNGSR,lower48,five_region,,,,Total Lower 48 states
+WNGSR,east,five_region,lower48,,,East region
+WNGSR,midwest,five_region,lower48,,,Midwest region
+WNGSR,mountain,five_region,lower48,,,Mountain region
+WNGSR,pacific,five_region,lower48,,,Pacific region
+WNGSR,south_central,five_region,lower48,,,South Central region
+WNGSR,salt,five_region,south_central,,,South Central salt caverns
+WNGSR,nonsalt,five_region,south_central,,,South Central non-salt

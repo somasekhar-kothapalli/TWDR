@@ -15,10 +15,11 @@ from pathlib import Path
 
 import duckdb
 
-from app.utils.common import ROOT, VISMAYA_DB_FILE, setup_logging
+from app.utils.common import DATA_DIR, ROOT, VISMAYA_DB_FILE, setup_logging
 
 logger = logging.getLogger("twdr.vismaya_db")
 SCHEMA_FILE = Path(__file__).parent / "schema.sql"
+SEED_DIR = DATA_DIR
 
 
 def connect(path=VISMAYA_DB_FILE):
@@ -26,6 +27,13 @@ def connect(path=VISMAYA_DB_FILE):
     con = duckdb.connect(str(path))
     con.execute(SCHEMA_FILE.read_text(encoding="utf-8"))
     return con
+
+
+def seed_ref(con, data_dir=SEED_DIR):
+    """Load ref.fields and ref.regions from data/ref_fields_seed.csv and data/ref_regions_seed.csv (kept in git as the backup).
+    Existing rows are left alone; add new rows to the CSV and run again."""
+    for table, name in (("ref.fields", "ref_fields_seed.csv"), ("ref.regions", "ref_regions_seed.csv")):
+        con.execute(f"INSERT INTO {table} SELECT * FROM read_csv(?, header=true, nullstr='') ON CONFLICT DO NOTHING", [str(Path(data_dir) / name)])
 
 
 def git_commit():
@@ -88,6 +96,7 @@ def main(argv=None):
     setup_logging()
     VISMAYA_DB_FILE.parent.mkdir(exist_ok=True)
     con = connect()
+    seed_ref(con)
     for name, n in table_counts(con).items():
         logger.info("%-28s %d rows", name, n)
     bad = [(name, n) for name, n in con.execute("SELECT * FROM meta.v_orphans").fetchall() if n]

@@ -1,0 +1,93 @@
+report_type,field,description,unit,eia_table,eia_series_id,tier,has_consensus
+WPSR,crude_stocks,"Commercial crude oil stocks excl. SPR, level",thousand_barrels,Table 1/4,,must,False
+WPSR,crude_stocks_change,"Commercial crude stocks excl. SPR, weekly change as published",thousand_barrels,Table 1/4,,must,True
+WPSR,crude_stocks_prior_week,"Commercial crude stocks excl. SPR, prior week as printed in THIS report",thousand_barrels,Table 1/4 (headline table),,must,False
+WPSR,crude_stocks_year_ago,"Commercial crude stocks excl. SPR, same week one year ago (as published)",thousand_barrels,Table 1/4 (headline table),,must,False
+WPSR,crude_stocks_yoy_change,"Commercial crude stocks excl. SPR, year-on-year change (as published)",thousand_barrels,Table 1/4 (headline table),,should,False
+WPSR,cushing_stocks,"Cushing, OK crude stocks, level",thousand_barrels,Table 4,,must,False
+WPSR,cushing_stocks_change,"Cushing, OK crude stocks, weekly change as published",thousand_barrels,Table 4,,must,True
+WPSR,gasoline_stocks,"Total motor gasoline stocks, level",thousand_barrels,Table 1/4,,must,False
+WPSR,gasoline_stocks_change,"Total motor gasoline stocks, weekly change as published",thousand_barrels,Table 1/4,,must,True
+WPSR,distillate_stocks,"Distillate fuel oil stocks, level",thousand_barrels,Table 1/4,,must,False
+WPSR,distillate_stocks_change,"Distillate fuel oil stocks, weekly change as published",thousand_barrels,Table 1/4,,must,True
+WPSR,refinery_util,"Percent utilization of refinery operable capacity, US",percent,Table 2,,must,False
+WPSR,refinery_util_change,"Refinery utilization, weekly change",percentage_points,Table 2,,must,True
+WPSR,crude_production,Domestic crude oil production (weekly estimate),thousand_bpd,Table 1,,must,False
+WPSR,crude_imports,Crude oil imports excl. SPR,thousand_bpd,Table 1,,must,False
+WPSR,crude_exports,Crude oil exports,thousand_bpd,Table 1,,must,False
+WPSR,crude_net_imports,Crude oil net imports,thousand_bpd,Table 1,,must,False
+WPSR,refinery_crude_inputs,Refiner and blender net input of crude oil,thousand_bpd,Table 1/2,,must,False
+WPSR,crude_adjustment,Crude oil adjustment (unaccounted-for crude),thousand_bpd,Table 1,,must,False
+WPSR,product_supplied_total,Total products supplied (implied demand),thousand_bpd,Table 1,,must,False
+WPSR,product_supplied_gasoline,Finished motor gasoline product supplied,thousand_bpd,Table 1,,must,False
+WPSR,product_supplied_distillate,Distillate fuel oil product supplied,thousand_bpd,Table 1,,must,False
+WPSR,product_supplied_jet,Kerosene-type jet fuel product supplied,thousand_bpd,Table 1,,must,False
+WPSR,spr_stocks,"Strategic Petroleum Reserve stocks, level",thousand_barrels,Table 1/4,,must,False
+WPSR,spr_stocks_change,"SPR stocks, weekly change as published",thousand_barrels,Table 1/4,,must,False
+WPSR,total_stocks_ex_spr,"Total commercial petroleum stocks excl. SPR, level",thousand_barrels,Table 1/4,,must,False
+WPSR,total_stocks_ex_spr_change,"Total commercial petroleum stocks excl. SPR, weekly change",thousand_barrels,Table 1/4,,must,False
+WPSR,crude_stocks_padd1,"Commercial crude stocks excl. SPR, PADD 1",thousand_barrels,Table 4,,should,False
+WPSR,crude_stocks_padd2,"Commercial crude stocks excl. SPR, PADD 2",thousand_barrels,Table 4,,should,False
+WPSR,crude_stocks_padd3,"Commercial crude stocks excl. SPR, PADD 3",thousand_barrels,Table 4,,should,False
+WPSR,crude_stocks_padd4,"Commercial crude stocks excl. SPR, PADD 4",thousand_barrels,Table 4,,should,False
+WPSR,crude_stocks_padd5,"Commercial crude stocks excl. SPR, PADD 5",thousand_barrels,Table 4,,should,False
+WPSR,crude_stocks_padd1_change,"Commercial crude stocks excl. SPR, PADD 1, weekly change as published",thousand_barrels,Table 4 (headline table),,should,False
+WPSR,crude_stocks_padd2_change,"Commercial crude stocks excl. SPR, PADD 2, weekly change as published",thousand_barrels,Table 4 (headline table),,should,False
+WPSR,crude_stocks_padd3_change,"Commercial crude stocks excl. SPR, PADD 3, weekly change as published",thousand_barrels,Table 4 (headline table),,should,False
+WPSR,crude_stocks_padd4_change,"Commercial crude stocks excl. SPR, PADD 4, weekly change as published",thousand_barrels,Table 4 (headline table),,should,False
+WPSR,crude_stocks_padd5_change,"Commercial crude stocks excl. SPR, PADD 5, weekly change as published",thousand_barrels,Table 4 (headline table),,should,False
+WPSR,refinery_util_padd1,"Refinery utilization, PADD 1",percent,Table 2,,should,False
+WPSR,refinery_util_padd2,"Refinery utilization, PADD 2",percent,Table 2,,should,False
+WPSR,refinery_util_padd3,"Refinery utilization, PADD 3",percent,Table 2,,should,False
+WPSR,refinery_util_padd4,"Refinery utilization, PADD 4",percent,Table 2,,should,False
+WPSR,refinery_util_padd5,"Refinery utilization, PADD 5",percent,Table 2,,should,False
+WPSR,refinery_crude_inputs_padd1,"Refiner net input of crude oil, PADD 1",thousand_bpd,Table 2,,should,False
+WPSR,refinery_crude_inputs_padd2,"Refiner net input of crude oil, PADD 2",thousand_bpd,Table 2,,should,False
+WPSR,refinery_crude_inputs_padd3,"Refiner net input of crude oil, PADD 3",thousand_bpd,Table 2,,should,False
+WPSR,refinery_crude_inputs_padd4,"Refiner net input of crude oil, PADD 4",thousand_bpd,Table 2,,should,False
+WPSR,refinery_crude_inputs_padd5,"Refiner net input of crude oil, PADD 5",thousand_bpd,Table 2,,should,False
+WPSR,refinery_gross_inputs,Gross inputs into refineries,thousand_bpd,Table 2,,should,False
+WPSR,refinery_operable_capacity,Operable crude oil distillation capacity,thousand_bpd,Table 2,,should,False
+WPSR,gasoline_production,Finished motor gasoline production (refiner and blender net),thousand_bpd,Table 3,,should,False
+WPSR,distillate_production,Distillate fuel oil production (refiner and blender net),thousand_bpd,Table 3,,should,False
+WPSR,jet_production,Kerosene-type jet fuel production,thousand_bpd,Table 3,,should,False
+WPSR,residual_production,Residual fuel oil production,thousand_bpd,Table 3,,should,False
+WPSR,jet_stocks,Kerosene-type jet fuel stocks,thousand_barrels,Table 4/6,,should,False
+WPSR,residual_stocks,Residual fuel oil stocks,thousand_barrels,Table 4/6,,should,False
+WPSR,propane_stocks,Propane/propylene stocks,thousand_barrels,Table 4/6,,should,False
+WPSR,other_oils_stocks,Other oils stocks,thousand_barrels,Table 4,,should,False
+WPSR,ethanol_production,Fuel ethanol production,thousand_bpd,Table 1,,should,False
+WPSR,ethanol_stocks,Fuel ethanol stocks,thousand_barrels,Table 4/5,,should,False
+WPSR,product_imports_total,Total petroleum product imports,thousand_bpd,Table 1,,should,False
+WPSR,product_exports_total,Total petroleum product exports,thousand_bpd,Table 1,,should,False
+WPSR,product_supplied_residual,Residual fuel oil product supplied,thousand_bpd,Table 1,,should,False
+WPSR,product_supplied_propane,Propane/propylene product supplied,thousand_bpd,Table 1,,should,False
+WPSR,product_supplied_other,Other oils product supplied,thousand_bpd,Table 1,,should,False
+WPSR,gasoline_stocks_padd1,"Total motor gasoline stocks, PADD 1",thousand_barrels,Table 5,,should,False
+WPSR,gasoline_stocks_padd2,"Total motor gasoline stocks, PADD 2",thousand_barrels,Table 5,,should,False
+WPSR,gasoline_stocks_padd3,"Total motor gasoline stocks, PADD 3",thousand_barrels,Table 5,,should,False
+WPSR,gasoline_stocks_padd4,"Total motor gasoline stocks, PADD 4",thousand_barrels,Table 5,,should,False
+WPSR,gasoline_stocks_padd5,"Total motor gasoline stocks, PADD 5",thousand_barrels,Table 5,,should,False
+WPSR,distillate_stocks_padd1,"Distillate fuel oil stocks, PADD 1",thousand_barrels,Table 6,,should,False
+WPSR,distillate_stocks_padd2,"Distillate fuel oil stocks, PADD 2",thousand_barrels,Table 6,,should,False
+WPSR,distillate_stocks_padd3,"Distillate fuel oil stocks, PADD 3",thousand_barrels,Table 6,,should,False
+WPSR,distillate_stocks_padd4,"Distillate fuel oil stocks, PADD 4",thousand_barrels,Table 6,,should,False
+WPSR,distillate_stocks_padd5,"Distillate fuel oil stocks, PADD 5",thousand_barrels,Table 6,,should,False
+WPSR,crude_imports_padd1,"Crude oil imports, PADD 1",thousand_bpd,Table 7,,nice,False
+WPSR,crude_imports_padd2,"Crude oil imports, PADD 2",thousand_bpd,Table 7,,nice,False
+WPSR,crude_imports_padd3,"Crude oil imports, PADD 3",thousand_bpd,Table 7,,nice,False
+WPSR,crude_imports_padd4,"Crude oil imports, PADD 4",thousand_bpd,Table 7,,nice,False
+WPSR,crude_imports_padd5,"Crude oil imports, PADD 5",thousand_bpd,Table 7,,nice,False
+WNGSR,working_gas,"Working gas in underground storage, level",bcf,Table,,must,False
+WNGSR,prior_week_working_gas,Prior week working gas as printed in THIS report (differs from last week's first print when EIA revises),bcf,Table,,must,False
+WNGSR,net_change,Weekly net change as published (includes reclassifications/revisions),bcf,Table,,must,True
+WNGSR,implied_flow,Implied flow: net change excluding reclassifications/revisions,bcf,Table,,must,False
+WNGSR,year_ago,"Working gas, same week one year ago (as published)",bcf,Table,,must,False
+WNGSR,five_yr_avg,"Working gas, 5-year average for the week (as published; window shown in header, e.g. 2021-25)",bcf,Table,,must,False
+WNGSR,pct_vs_year_ago,Percent difference vs year ago (as published),percent,Table,,should,False
+WNGSR,pct_vs_five_yr_avg,Percent difference vs 5-year average (as published),percent,Table,,should,False
+WNGSR,se_net_change,EIA standard error of the weekly net change,bcf,Sampling variability table,,must,False
+WNGSR,cv_stocks,"EIA coefficient of variation for stocks, current week",percent,Sampling variability table,,should,False
+WNGSR,cv_stocks_prior_week,"EIA coefficient of variation for stocks, prior week as printed in this report",percent,Sampling variability table,,nice,False
+WNGSR,five_yr_max,"Working gas, 5-year maximum for the week",bcf,Five-year stats file (separate download),,nice,False
+WNGSR,five_yr_min,"Working gas, 5-year minimum for the week",bcf,Five-year stats file (separate download),,nice,False

@@ -125,9 +125,18 @@ def build_calendars(got):
     return calendars
 
 
+def seed_source_fields(con):
+    """ref.source_fields: each Investing.com page slug -> canonical field, unit after parsing, scale factor."""
+    for indicator, (report_type, field, unit, factor) in PAGES.items():
+        slug = sources.INDICATORS[indicator]["investing"]
+        con.execute("INSERT INTO ref.source_fields VALUES (?,?,?,?,?,?,TRUE) ON CONFLICT DO NOTHING",
+                    [SOURCE, slug, report_type, field, unit, float(factor)])
+
+
 def load_calendar(con, got, captured, save=save_raw):
     """Keep every page under raw/ (registered in ref.raw_files) and write ref.calendar. Returns the calendars written."""
     calendars = build_calendars(got)
+    seed_source_fields(con)
     for report_type, cal in calendars.items():
         upsert(con, report_type, cal)
     for indicator, (slug, html, _) in got.items():

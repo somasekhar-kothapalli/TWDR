@@ -62,6 +62,18 @@ def test_run_tracking_records_start_and_finish():
     assert (status, rows, message) == ("success", 5, "five rows") and finished is not None
 
 
+def test_seed_ref_loads_the_csvs_once_and_covers_every_source_field():
+    from app.vismaya import calendar_backfill as vb
+    con = vismaya_db.connect(":memory:")
+    vismaya_db.seed_ref(con)
+    vismaya_db.seed_ref(con)                                             # second run changes nothing
+    assert con.execute("SELECT count(*) FROM ref.fields").fetchone()[0] == 92
+    assert con.execute("SELECT region, parent_region, valid_from FROM ref.regions WHERE region = 'salt'").fetchone() == ("salt", "south_central", None)
+    vb.seed_source_fields(con)
+    assert con.execute("SELECT count(*) FROM ref.source_fields s ANTI JOIN ref.fields f USING (report_type, field)").fetchone()[0] == 0
+    assert con.execute("SELECT count(*) FROM ref.fields WHERE has_consensus").fetchone()[0] == 6
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
