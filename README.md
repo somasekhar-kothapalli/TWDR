@@ -1,4 +1,5 @@
-# TWDR Tier 1: EIA inventory surprise on MCX crude options
+#TWDR - The Weekly Deviation Report
+## TWDR Tier 1: EIA inventory surprise on MCX crude options
 
 **Status.** Tier 1 (crude, gasoline, distillate) is built: `python -m app.signal_engine` produces the verdict
 below. Tiers 2 to 4 (Cushing, refinery runs, SPR, imports, product supplied) are designed but not built; they
