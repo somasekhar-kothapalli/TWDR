@@ -20,15 +20,23 @@ def test_schema_applies_twice_and_creates_every_schema():
     schemas = {r[0] for r in con.execute("SELECT schema_name FROM information_schema.schemata").fetchall()}
     assert {"ref", "wpsr", "wngsr", "market", "meta"} <= schemas
     counts = vismaya_db.table_counts(con)
-    assert len(counts) == 17 and not any(counts.values())
+    assert len(counts) == 19 and not any(counts.values())
 
 
 def test_surprise_is_the_first_print_minus_the_median_consensus():
     con = seeded()
     row = con.execute("SELECT consensus, n_sources, surprise, implied_flow_first, has_adjustment FROM wngsr.v_surprise").fetchone()
     assert row == (62.0, 2, 2.0, 62.0, False)
-    con.execute("INSERT INTO wngsr.adjustments VALUES (1,'salt','revision',2.0,null,null,'x')")
+    con.execute("INSERT INTO wngsr.adjustments VALUES (1,'salt',1,'revision',2.0,null,null,'x','x')")
     assert con.execute("SELECT has_adjustment FROM wngsr.v_surprise").fetchone()[0] is True
+
+
+def test_adjustment_mismatch_view_flags_an_unrecorded_gap_and_clears_when_recorded():
+    con = seeded()
+    con.execute("UPDATE wngsr.values SET value_first = 70 WHERE field = 'net_change'")      # net 70 vs implied 62: gap 8
+    assert con.execute("SELECT region, gap_bcf, recorded_bcf FROM wngsr.v_adjustment_mismatch").fetchall() == [("lower48", 8.0, 0.0)]
+    con.execute("INSERT INTO wngsr.adjustments VALUES (1,'lower48',1,'reclassification',8.0,null,null,'x','x')")
+    assert con.execute("SELECT count(*) FROM wngsr.v_adjustment_mismatch").fetchone()[0] == 0
 
 
 def test_forecast_quality_and_actual_mismatch():

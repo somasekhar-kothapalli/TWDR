@@ -104,6 +104,36 @@ CREATE TABLE IF NOT EXISTS wpsr.forecasts (
   PRIMARY KEY (report_seq, field, source, captured_at_utc)
 );
 
+-- One-off adjustments EIA announces in a report, e.g. the monthly crude
+-- production re-benchmarking (STEO week) or a published erratum.
+-- These distort week-on-week changes and must be visible to labels.
+CREATE TABLE IF NOT EXISTS wpsr.adjustments (
+  report_seq         INTEGER NOT NULL,   -- report that announced it
+  field              VARCHAR NOT NULL,   -- e.g. crude_production
+  adjustment_no      INTEGER NOT NULL DEFAULT 1,  -- 1,2,... when a report has several for one field
+  adjustment_type    VARCHAR NOT NULL CHECK (adjustment_type IN ('production_rebenchmark','erratum','methodology_change')),
+  amount             DOUBLE,             -- signed, in the field's unit; NULL if only described
+  amount_upper_bound DOUBLE,             -- when EIA gives only a bound ("less than 50,000 b/d")
+  affects_week       DATE,               -- week_ending affected, if different from report week
+  description        VARCHAR NOT NULL,
+  raw_sha256         VARCHAR NOT NULL,
+  PRIMARY KEY (report_seq, field, adjustment_no)
+);
+
+-- Which tables each archived report actually contained (format drift:
+-- Table 10 dropped 2011, Table 13 dropped 2024, 11/12/14 dropped Oct 2026, 4A added)
+CREATE TABLE IF NOT EXISTS wpsr.report_manifest (
+  report_seq     INTEGER NOT NULL,
+  table_no       VARCHAR NOT NULL,   -- '1', '5A', '4A', 'E' (appendix), 'highlights'
+  table_name     VARCHAR NOT NULL,
+  csv_available  BOOLEAN NOT NULL,
+  pdf_available  BOOLEAN NOT NULL,
+  xls_available  BOOLEAN NOT NULL DEFAULT FALSE,
+  discontinued   BOOLEAN NOT NULL DEFAULT FALSE,  -- listed but struck through
+  raw_sha256     VARCHAR,            -- file used, if downloaded
+  PRIMARY KEY (report_seq, table_no)
+);
+
 -- EIA's own narrative text per report (Highlights, data notes) -> RAG
 CREATE TABLE IF NOT EXISTS wpsr.texts (
   report_seq   INTEGER NOT NULL,
@@ -150,14 +180,16 @@ CREATE TABLE IF NOT EXISTS wngsr.values (
 -- Explicit revisions/reclassifications EIA announces in a report
 -- (why net_change differs from implied_flow that week)
 CREATE TABLE IF NOT EXISTS wngsr.adjustments (
-  report_seq       INTEGER NOT NULL,   -- report that announced it
-  region           VARCHAR NOT NULL,
-  adjustment_type  VARCHAR NOT NULL CHECK (adjustment_type IN ('reclassification','revision')),
-  amount_bcf       DOUBLE  NOT NULL,   -- signed
-  affects_week     DATE,               -- week_ending the change applies to, if stated
-  description      VARCHAR,
-  raw_sha256       VARCHAR NOT NULL,
-  PRIMARY KEY (report_seq, region, adjustment_type)
+  report_seq         INTEGER NOT NULL,   -- report that announced it
+  region             VARCHAR NOT NULL,
+  adjustment_no      INTEGER NOT NULL DEFAULT 1,  -- 1,2,... when a report has several for one region
+  adjustment_type    VARCHAR NOT NULL CHECK (adjustment_type IN ('reclassification','revision','methodology_change')),
+  amount_bcf         DOUBLE,             -- signed; NULL if EIA only describes it
+  amount_upper_bound DOUBLE,             -- when EIA gives only a bound ("less than X Bcf")
+  affects_week       DATE,               -- week_ending the change applies to, if stated
+  description        VARCHAR NOT NULL,
+  raw_sha256         VARCHAR NOT NULL,
+  PRIMARY KEY (report_seq, region, adjustment_no)
 );
 
 -- Market expectations (usually only lower48 net_change has consensus)
@@ -342,6 +374,23 @@ SELECT f.report_seq, f.region, f.field, f.source, f.actual AS source_actual,
 FROM wngsr.forecasts f
 JOIN wngsr.values v USING (report_seq, region, field)
 WHERE f.actual IS NOT NULL AND abs(f.actual - v.value_first) > 1e-6;
+
+-- WNGSR: net_change - implied_flow should equal the announced adjustments.
+-- GOOD: zero rows. A row = an adjustment you haven't recorded (or a parsing error).
+CREATE OR REPLACE VIEW wngsr.v_adjustment_mismatch AS
+WITH gap AS (
+  SELECT n.report_seq, n.region, n.value_first - f.value_first AS gap_bcf
+  FROM wngsr.values n
+  JOIN wngsr.values f ON f.report_seq = n.report_seq AND f.region = n.region AND f.field = 'implied_flow'
+  WHERE n.field = 'net_change'
+),
+adj AS (
+  SELECT report_seq, region, sum(amount_bcf) AS adj_bcf
+  FROM wngsr.adjustments GROUP BY ALL
+)
+SELECT g.report_seq, g.region, g.gap_bcf, coalesce(a.adj_bcf, 0) AS recorded_bcf
+FROM gap g LEFT JOIN adj a USING (report_seq, region)
+WHERE abs(g.gap_bcf - coalesce(a.adj_bcf, 0)) > 1;   -- 1 Bcf rounding tolerance
 
 -- Integrity checks replacing foreign keys: every row should return 0
 CREATE OR REPLACE VIEW meta.v_orphans AS
