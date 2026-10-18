@@ -1,4 +1,4 @@
-#TWDR - The Weekly Deviation Report
+# TWDR - The Weekly Deviation Report
 ## TWDR Tier 1: EIA inventory surprise on MCX crude options
 
 **Status.** Tier 1 (crude, gasoline, distillate) is built: `python -m app.signal_engine` produces the verdict
