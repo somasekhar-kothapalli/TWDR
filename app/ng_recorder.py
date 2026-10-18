@@ -269,7 +269,7 @@ def choose_rate(readings):
 # ---------- records ----------
 def consensus_row(release_day):
     with scraper_for("investing") as scraper:
-        page = scraper.fetch_page(slug_for("ng_storage", "investing"))
+        page = scraper.fetch_page(slug_for("eia_natural_gas", "investing"))
     row = row_for_release((page or {}).get("calendar_rows") or [], release_day.strftime("%d-%m-%Y"))
     if row is None:
         raise RuntimeError(f"no Investing.com row for {release_day}")
@@ -427,7 +427,7 @@ def main(argv=None):
         data = load_record()
         if args.mode == "backfill":
             with scraper_for("investing") as scraper:
-                page = scraper.fetch_page(slug_for("ng_storage", "investing"))
+                page = scraper.fetch_page(slug_for("eia_natural_gas", "investing"))
             if not page or not page["calendar_rows"]:
                 raise RuntimeError("no natural gas storage rows from Investing.com")
             today = now_ist().date()

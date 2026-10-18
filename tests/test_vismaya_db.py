@@ -1,5 +1,5 @@
 """Vismaya schema: applies, is idempotent, and its views compute (in-memory DuckDB, no files)."""
-from app import vismaya_db
+from app.vismaya import db as vismaya_db
 
 T = "'2026-10-01 14:30:00+00'"
 
@@ -51,6 +51,15 @@ def test_shell_runs_statements_lists_tables_and_survives_errors():
     vismaya_db.run_shell(con, read=lambda prompt: next(lines), write=out.append)
     text = "\n".join(out)
     assert "wngsr.forecasts  (2 rows)" in text and text.count("error:") == 1
+
+
+def test_run_tracking_records_start_and_finish():
+    con = vismaya_db.connect(":memory:")
+    run_id = vismaya_db.start_run(con, "app.vismaya.test")
+    assert con.execute("SELECT status, finished_at_utc FROM meta.pipeline_runs WHERE run_id = ?", [run_id]).fetchone() == ("running", None)
+    vismaya_db.finish_run(con, run_id, "success", 5, "five rows")
+    status, rows, message, finished = con.execute("SELECT status, rows_loaded, message, finished_at_utc FROM meta.pipeline_runs").fetchone()
+    assert (status, rows, message) == ("success", 5, "five rows") and finished is not None
 
 
 if __name__ == "__main__":

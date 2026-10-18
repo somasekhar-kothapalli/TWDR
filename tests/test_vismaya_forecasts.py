@@ -1,8 +1,14 @@
-"""Run: python -m tests.test_vismaya_forecasts   (no network; the HTML mimics Investing.com's occurrence table)."""
-from datetime import date, datetime, time, timezone
+"""Run: python -m tests.test_vismaya_forecasts   (no network; saved pages are written to a temp folder; in-memory DuckDB)."""
+import hashlib
+import tempfile
+from datetime import date, datetime, timezone
+from pathlib import Path
 
-from app import vismaya_db
-from app import vismaya_forecasts as vf
+from app.vismaya import calendar_backfill as vb
+from app.vismaya import db as vismaya_db
+from app.vismaya import forecasts as vf
+
+DOWNLOADED = datetime(2026, 10, 18, 12, 0, tzinfo=timezone.utc)
 
 
 def page(*rows):
@@ -10,89 +16,88 @@ def page(*rows):
     return f'<html><table data-test="occurrence-table"><tbody>{body}</tbody></table></html>'
 
 
-CRUDE = page(
-    ["21-10-2026", "14:30", "", "", "-8.557M"],                  # not released: only the previous is known
-    ["30-09-2026", "14:30", "0.922M", "-0.700M", "2.969M"],
-    ["23-09-2026", "14:30", "2.969M", "", "-0.640M"],            # no forecast posted: NULL, never 0
-    ["", "", "", "", ""],                                        # a spacer row
-    ["16-09-2026", "14:30", "250K", "-1.600M", "-0.391M"],       # thousands
-)
+def saved(tmp, con, html, indicators=("eia_crude",)):
+    """Run the calendar backfill's loading step on `html`, writing the page into `tmp` (the stand-in for raw/)."""
+    def save(text, slug, at):
+        rel = f"investing_com/{slug}/x.html"
+        (Path(tmp) / rel).parent.mkdir(parents=True, exist_ok=True)
+        (Path(tmp) / rel).write_text(text, encoding="utf-8")
+        return hashlib.sha256(text.encode()).hexdigest(), rel, len(text)
+    got, _ = vb.collect(list(indicators), lambda slug: html)
+    vb.load_calendar(con, got, DOWNLOADED, save=save)
 
 
-def test_parse_table_scales_to_thousand_barrels_and_keeps_blanks_null():
-    rows = vf.parse_table(CRUDE, 1000)
-    assert [r["release_date"] for r in rows] == [date(2026, 10, 21), date(2026, 9, 30), date(2026, 9, 23), date(2026, 9, 16)]
-    new, old, blank, small = rows
-    assert (new["actual"], new["forecast"], new["previous"]) == (None, None, -8557.0)
-    assert (old["actual"], old["forecast"], old["previous"], old["release_time"]) == (922.0, -700.0, 2969.0, time(14, 30))
-    assert blank["forecast"] is None and blank["actual"] == 2969.0
-    assert small["actual"] == 250.0
-
-
-def test_refinery_is_percentage_points_not_scaled():
-    row = vf.parse_table(page(["15-10-2026", "16:00", "0.8%", "", "0.2%"]), 1)[0]
-    assert (row["actual"], row["forecast"], row["previous"], row["release_time"]) == (0.8, None, 0.2, time(16, 0))
-
-
-def test_a_page_with_no_table_gives_no_rows():
-    assert vf.parse_table("<html>blocked</html>", 1000) == []
-
-
-def test_match_seq_takes_the_closest_release_date_within_two_days():
-    cal = [(1, datetime(2026, 9, 30, 14, 30, tzinfo=timezone.utc)), (2, datetime(2026, 10, 7, 14, 30, tzinfo=timezone.utc))]
-    assert vf.match_seq(cal, date(2026, 9, 30)) == (1, 0)
-    assert vf.match_seq(cal, date(2026, 10, 8)) == (2, 1)              # a holiday-delayed release, a day late
-    assert vf.match_seq(cal, date(2026, 10, 20)) == (None, None)
-    assert vf.match_seq([], date(2026, 9, 30)) == (None, None)
-
-
-def test_drop_monthly_removes_the_monthly_series_but_keeps_isolated_weekly_forecast_rows():
-    rows = [{"release_date": d} for d in (date(2013, 6, 5), date(2013, 5, 30), date(2013, 5, 1), date(2013, 4, 1), date(2013, 3, 1))]
-    kept = [r["release_date"] for r in vf.drop_monthly(rows)]
-    assert kept == [date(2013, 6, 5), date(2013, 5, 30)]               # the 1st-of-month rows go
-    cushing = [{"release_date": date(2016, 3, 30)}, {"release_date": date(2016, 3, 2)}]   # forecast-only rows, 28 days apart
-    assert len(vf.drop_monthly(cushing)) == 2                           # not the 1st: kept
-
-
-def test_collect_reports_the_pages_that_failed():
-    got, failed = vf.collect(["eia_crude", "eia_refinery"], lambda slug: CRUDE if "crude" in slug else None)
-    assert list(got) == ["eia_crude"] and failed == ["eia_refinery"]
-
-
-def test_load_writes_raw_registry_and_matched_rows_only():
-    con = vismaya_db.connect(":memory:")
-    con.execute("INSERT INTO ref.calendar VALUES ('WPSR',1,'2026-09-25','2026-09-30 14:30:00+00',false,null,null,null,false,null)")
-    got, _ = vf.collect(["eia_crude"], lambda slug: CRUDE)
-    captured = datetime(2026, 10, 18, 12, 0, tzinfo=timezone.utc)
-    inserted, unmatched, duplicates = vf.load(con, got, captured, save=lambda html, slug, at: ("sha1", f"investing_com/{slug}/x.html", len(html)))
-    assert (inserted, unmatched, duplicates) == (1, 3, 0)                    # only 30 Sep has a calendar row
-    row = con.execute("SELECT report_seq, field, source, actual, forecast, previous, unit, raw_sha256, source_tz FROM wpsr.forecasts").fetchone()
-    assert row == (1, "crude_stocks_change", "investing_com", 922.0, -700.0, 2969.0, "thousand_barrels", "sha1", "UTC")
-    assert con.execute("SELECT report_type, report_seq FROM ref.raw_files").fetchone() == ("WPSR", None)
+def test_forecasts_are_matched_to_the_calendar_weeks_built_from_the_same_pages():
+    html = page(["21-10-2026", "14:30", "", "", "-8.557M"], ["30-09-2026", "14:30", "0.922M", "-0.700M", "2.969M"],
+                ["20-07-2011", "14:30", "1.0M", "2.0M", "3.0M"])            # before the first calendar week
+    with tempfile.TemporaryDirectory() as tmp:
+        con = vismaya_db.connect(":memory:")
+        saved(tmp, con, html)
+        inserted, unmatched, duplicates, skipped, missing = vf.load_forecasts(con, ["eia_crude"], raw_dir=Path(tmp))
+    assert (inserted, unmatched, duplicates, skipped, missing) == (2, 1, 0, [], [])
+    row = con.execute("SELECT field, source, actual, forecast, previous, unit, source_tz, captured_at_utc FROM wpsr.forecasts WHERE forecast IS NOT NULL").fetchone()
+    assert row[:7] == ("crude_stocks_change", "investing_com", 922.0, -700.0, 2969.0, "thousand_barrels", "UTC")
+    assert row[7] == DOWNLOADED                                          # the page's own download time, not the loading time
     orphans = dict(con.execute("SELECT * FROM meta.v_orphans").fetchall())
     assert orphans["wpsr.forecasts without calendar"] == 0 and orphans["wpsr.forecasts with unknown raw file"] == 0
-    later = datetime(2026, 10, 19, 12, 0, tzinfo=timezone.utc)                # a rerun with an identical page
-    vf.load(con, got, later, save=lambda html, slug, at: ("sha1", f"investing_com/{slug}/x.html", len(html)))
-    assert con.execute("SELECT count(*) FROM ref.raw_files").fetchone()[0] == 1       # one raw file, registered once
-    assert con.execute("SELECT count(*) FROM wpsr.forecasts").fetchone()[0] == 2      # but a second capture of the forecast
 
 
 def test_two_rows_for_one_report_keep_the_one_with_a_forecast():
-    con = vismaya_db.connect(":memory:")
-    con.execute("INSERT INTO ref.calendar VALUES ('WPSR',1,'2023-11-10','2023-11-15 15:30:00+00',false,null,null,null,false,null)")
-    rows = [{"release_date": date(2023, 11, 15), "release_time": None, "actual": 3600.0, "forecast": 1793.0, "previous": 13869.0},
-            {"release_date": date(2023, 11, 15), "release_time": None, "actual": 13869.0, "forecast": None, "previous": 774.0}]  # a glitch on the page
-    got = {"eia_crude": ("slug", "txt", rows)}
-    inserted, unmatched, duplicates = vf.load(con, got, datetime(2026, 10, 18, tzinfo=timezone.utc), save=lambda *a: ("shaX", "investing_com/slug/c.html", 1))
+    html = page(["15-11-2023", "14:30", "3.600M", "1.793M", "13.869M"], ["15-11-2023", "14:30", "13.869M", "", "0.774M"])   # a page glitch
+    with tempfile.TemporaryDirectory() as tmp:
+        con = vismaya_db.connect(":memory:")
+        saved(tmp, con, html)
+        inserted, unmatched, duplicates, _, _ = vf.load_forecasts(con, ["eia_crude"], raw_dir=Path(tmp))
     assert (inserted, unmatched, duplicates) == (1, 0, 1)
     assert con.execute("SELECT actual, forecast FROM wpsr.forecasts").fetchone() == (3600.0, 1793.0)
 
 
-def test_collect_drops_the_monthly_distillate_rows():
-    html = page(["05-06-2013", "14:30", "2.611M", "1.228M", "1.851M"], ["30-05-2013", "14:30", "1.851M", "0.017M", "-1.052M"],
-                ["01-05-2013", "14:30", "0.793M", "", "-1.937M"], ["01-04-2013", "14:30", "-1.937M", "", "-2.167M"])
-    got, _ = vf.collect(["eia_distillate"], lambda slug: html)
-    assert [r["release_date"] for r in got["eia_distillate"][2]] == [date(2013, 6, 5), date(2013, 5, 30)]
+def test_a_page_already_loaded_is_skipped_and_a_page_not_saved_is_reported():
+    html = page(["30-09-2026", "14:30", "0.922M", "-0.700M", "2.969M"])
+    with tempfile.TemporaryDirectory() as tmp:
+        con = vismaya_db.connect(":memory:")
+        saved(tmp, con, html)
+        assert vf.load_forecasts(con, ["eia_crude"], raw_dir=Path(tmp))[0] == 1
+        again = vf.load_forecasts(con, ["eia_crude", "eia_gasoline"], raw_dir=Path(tmp))
+    assert again == (0, 0, 0, ["eia_crude"], ["eia_gasoline"])
+    assert con.execute("SELECT count(*) FROM wpsr.forecasts").fetchone()[0] == 1
+
+
+def test_an_empty_calendar_is_an_error():
+    con = vismaya_db.connect(":memory:")
+    try:
+        vf.load_forecasts(con, ["eia_crude"])
+    except RuntimeError as exc:
+        assert "calendar_backfill" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")
+
+
+def test_natural_gas_forecasts_go_to_wngsr_in_bcf_for_the_lower_48():
+    html = page(["15-10-2026", "14:30", "", "", "53.00B"], ["08-10-2026", "14:30", "58.00B", "54.00B", "64.00B"],
+                ["01-10-2026", "14:30", "64.00B", "", "53.00B"])
+    with tempfile.TemporaryDirectory() as tmp:
+        con = vismaya_db.connect(":memory:")
+        saved(tmp, con, html, indicators=("eia_natural_gas",))
+        inserted, unmatched, duplicates, skipped, missing = vf.load_forecasts(con, ["eia_natural_gas"], raw_dir=Path(tmp))
+    assert (inserted, unmatched, duplicates, skipped, missing) == (3, 0, 0, [], [])
+    assert con.execute("SELECT count(*) FROM wpsr.forecasts").fetchone()[0] == 0
+    row = con.execute("SELECT region, field, source, release_date, actual, forecast, previous, unit, captured_at_utc FROM wngsr.forecasts "
+                      "WHERE forecast IS NOT NULL").fetchone()
+    assert row == ("lower48", "net_change", "investing_com", date(2026, 10, 8), 58.0, 54.0, 64.0, "bcf", DOWNLOADED)
+    orphans = dict(con.execute("SELECT * FROM meta.v_orphans").fetchall())
+    assert orphans["wngsr.forecasts without calendar"] == 0 and orphans["wngsr.forecasts with unknown raw file"] == 0
+    assert con.execute("SELECT count(*) FROM wngsr.v_consensus").fetchone()[0] == 1               # the view reads it: the 8 Oct week
+
+
+def test_a_failed_run_is_recorded_as_failed_not_left_running():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = str(Path(tmp) / "v.duckdb")
+        assert vf.main(["--db", path]) == 1                              # no calendar yet: the run fails
+        con = vismaya_db.connect(path)
+        row = con.execute("SELECT script, status, message FROM meta.pipeline_runs").fetchone()
+        con.close()
+    assert row[:2] == ("app.vismaya.forecasts", "failed") and "calendar_backfill" in row[2]
 
 
 if __name__ == "__main__":

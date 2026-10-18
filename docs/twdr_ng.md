@@ -1058,7 +1058,7 @@ still not posted for 8 Oct (check Wednesday evening).
 
 ## 2. What already exists in the repo (checked 2026-10-02)
 
-- `app/scraper/sources.py` has an `ng_storage` entry for both sites (TradingEconomics
+- `app/scraper/sources.py` has an `eia_natural_gas` entry for both sites (TradingEconomics
   `united-states/natural-gas-stocks-change`, Investing.com `natural-gas-storage-386`); `to_mb_suffixed` keeps the
   Bcf unit as is. The shared scrapers, calendar row helpers and race pattern are reusable as they are.
 - `common.py` reserves `NG_RECORD_FILE` ("natural gas storage prints and price paths; v0.2, record only"). No stage

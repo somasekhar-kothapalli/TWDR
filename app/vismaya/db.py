@@ -1,20 +1,24 @@
-"""Create (or update) the Vismaya DuckDB database from db/vismaya_schema.sql.
+"""Create (or update) the Vismaya DuckDB database from app/vismaya/schema.sql.
 
-    python -m app.vismaya_db            # data/vismaya.duckdb, schema applied, every table's row count printed
-    python -m app.vismaya_db --shell    # a read-only SQL prompt on it (end a statement with ;  .tables  .quit)
+    python -m app.vismaya.db            # data/vismaya.duckdb, schema applied, every table's row count printed
+    python -m app.vismaya.db --shell    # a read-only SQL prompt on it (end a statement with ;  .tables  .quit)
 
 The schema is idempotent (CREATE ... IF NOT EXISTS, views are replaced), so rerunning is safe. The file holds
 derived data only: it must be rebuildable from raw downloads, so it is git-ignored and never edited by hand.
 """
 import argparse
 import logging
+import subprocess
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 
 import duckdb
 
 from app.utils.common import ROOT, VISMAYA_DB_FILE, setup_logging
 
 logger = logging.getLogger("twdr.vismaya_db")
-SCHEMA_FILE = ROOT / "db" / "vismaya_schema.sql"
+SCHEMA_FILE = Path(__file__).parent / "schema.sql"
 
 
 def connect(path=VISMAYA_DB_FILE):
@@ -22,6 +26,27 @@ def connect(path=VISMAYA_DB_FILE):
     con = duckdb.connect(str(path))
     con.execute(SCHEMA_FILE.read_text(encoding="utf-8"))
     return con
+
+
+def git_commit():
+    try:
+        return subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip() or None
+    except OSError:
+        return None
+
+
+def start_run(con, script):
+    """Record a running pipeline run in meta.pipeline_runs -> its run_id."""
+    run_id = str(uuid.uuid4())
+    con.execute("INSERT INTO meta.pipeline_runs VALUES (?,?,?,?,NULL,'running',NULL,NULL)",
+                [run_id, script, git_commit(), datetime.now(timezone.utc)])
+    return run_id
+
+
+def finish_run(con, run_id, status, rows=None, message=None):
+    """Close the run: status 'success' or 'failed', the rows it loaded, and a message."""
+    con.execute("UPDATE meta.pipeline_runs SET finished_at_utc = ?, status = ?, rows_loaded = ?, message = ? WHERE run_id = ?",
+                [datetime.now(timezone.utc), status, rows, message, run_id])
 
 
 def table_counts(con):

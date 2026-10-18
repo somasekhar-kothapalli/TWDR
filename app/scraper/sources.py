@@ -39,7 +39,7 @@ INDICATORS = {
         "investing": "api-weekly-crude-stock-656",
     },
     # Natural gas storage (Bcf, not million barrels): weekly change, Thursdays. Values carry a Bcf / B suffix.
-    "ng_storage": {
+    "eia_natural_gas": {
         "tradingeconomics": "united-states/natural-gas-stocks-change",
         "investing": "natural-gas-storage-386",
     },

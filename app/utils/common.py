@@ -28,7 +28,7 @@ JOURNAL_FILE = DATA_DIR / "journal.json"          # journal (your own fills and 
 CRUDE_RECORD_FILE = DATA_DIR / "crude_record.json"  # crude_recorder (every Wednesday: decision + post-print price path)
 NG_RECORD_FILE = DATA_DIR / "ng_record.json"    # ng_recorder (natural gas storage prints and price paths; v0.2, record only)
 RAW_DIR = ROOT / "raw"                            # untouched downloads for Vismaya (git-ignored); registered in ref.raw_files
-VISMAYA_DB_FILE = DATA_DIR / "vismaya.duckdb"  # vismaya_db: EIA release surprise dataset (DuckDB; rebuildable, git-ignored)
+VISMAYA_DB_FILE = DATA_DIR / "vismaya.duckdb"  # vismaya package: EIA release surprise dataset (DuckDB; rebuildable, git-ignored)
 DATE_FORMAT = "%d-%m-%Y"
 TIMESTAMP_FORMAT = "%d-%m-%Y %H:%M"
 
