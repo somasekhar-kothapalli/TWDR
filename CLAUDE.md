@@ -20,15 +20,16 @@ python -m app.signal_engine [--once] [--allow-stale]       # Tier 1 signal, star
 python docs/img/make_iv_tables.py                          # redraw docs/img/twdr_ng_iv_tables.png (NG option delta/IV tables, computed from PARAMETERS in the script)
 python docs/img/make_flowcharts.py                         # redraw docs/img/twdr_cl_flow.png and twdr_ng_flow.png (used in README.md); edit the script when a rule changes
 python -m app.ng_recorder [pre|post|backfill] [--date DD-MM-YYYY]   # natural gas, record only -> data/ng_record.json: pre ~19:55 IST (consensus, USD/INR with age), post >=90 min after the release (EIA table, salt ratios, NG=F bars, entry-rule result), backfill = the reports Yahoo still has (~60 days); pre and post send a Telegram summary (record only, not a signal)
+python -m app.vismaya_db                                   # create/update data/vismaya.duckdb from db/vismaya_schema.sql (DuckDB, git-ignored; schema only, no loaders yet)
 python -m app.utils.wti_candle                              # see note below
 python -m app.scraper.sites.investing --slug <slug> [--date DD-MM-YYYY]   # debug one scraper (cli.py)
 ```
 
-Tests (no pytest installed; each file also runs as a module, fake scrapers, no network): `python -m tests.test_signal_engine`, `python -m tests.test_eia_actuals`, `python -m tests.test_api_products`, `python -m tests.test_ng_recorder`, `python -m tests.test_currency`. `sources.py` mentions `tests/test_sources.py`, which is absent. No linter config.
+Tests (no pytest installed; each file also runs as a module, fake scrapers, no network): `python -m tests.test_signal_engine`, `python -m tests.test_eia_actuals`, `python -m tests.test_api_products`, `python -m tests.test_ng_recorder`, `python -m tests.test_currency`, `python -m tests.test_vismaya_db`. `sources.py` mentions `tests/test_sources.py`, which is absent. No linter config.
 
 ## Architecture
 
-Pipeline of independent CLI stages; each writes one JSON file in `data/`, and file paths are constants in `app/utils/common.py` (import them, never re-spell names). `common.py` also lists files for stages not yet in the repo (`signal_engine`, `market_data`, `surprise_history`, `journal`, `crude_recorder`, `ng_recorder`) — `data/` contents (`consensus.json`, `api_report.json`, `eia_actuals.json`, `wti_candle.json`, `twdr.db`) are the only outputs so far.
+Pipeline of independent CLI stages; each writes one JSON file in `data/`, and file paths are constants in `app/utils/common.py` (import them, never re-spell names). `common.py` also lists files for stages not yet in the repo (`signal_engine`, `market_data`, `surprise_history`, `journal`, `crude_recorder`, `ng_recorder`) — `data/` contents (`consensus.json`, `api_report.json`, `eia_actuals.json`, `wti_candle.json`) are the only outputs so far.
 
 Stages: `consensus_fetcher` (Tue, consensus crude/gasoline/distillate) -> `api_monitor` (Wed ~02:00 IST, API crude) -> `eia_actuals` (Wed 20:00 IST; the file is written as soon as crude/gasoline/distillate are in, then Cushing change/level, net-imports change and refinery util change are merged in best effort, null until then) -> `utils/wti_candle` (NYMEX WTI 5-min release candle via yfinance, USD not MCX rupees).
 
